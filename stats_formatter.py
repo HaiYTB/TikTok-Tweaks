@@ -213,6 +213,7 @@ def build_video_stats_message(data: Dict[str, Any]) -> str:
         f"├ 🚀 FPS: <code>{app_fps:.1f} fps</code> (Original High-Refresh)\n"
         f"├ ⚡ Bitrate: <code>{app_bitrate:.2f} Mbps</code> (Adaptive Stream)\n"
         f"└ 💾 File size: <code>{app_size:.2f} MB</code> (Original Quality)\n"
+        f"<i>💡 Ghi chú: Mobile App dùng chuẩn nén H.265 (HEVC) nên dung lượng nhẹ hơn 40-50% so với Browser H.264 dù cùng độ phân giải 1080p sắc nét.</i>\n"
         f"<i>⚠️ P.S. Quality in the mobile app depends on multiple factors (TikTok version, the phone used for viewing, region, internet connection quality, etc.)</i>\n\n"
         f"🎛️ <b>QUALITY PRESETS CATEGORY:</b>\n"
         f"├ 💎 <b>1080p Original:</b> HEVC/AVC Max Bitrate ({app_size:.1f}MB)\n"

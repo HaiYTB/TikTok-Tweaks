@@ -453,7 +453,7 @@ def get_download_url_by_quality(data: Dict[str, Any], quality: str) -> Tuple[str
     return "", "Unknown", 0
 
 async def download_file_to_path(url: str, save_path: str, max_size_mb: int = 512) -> Tuple[bool, Optional[str]]:
-    """Tải file theo chunking với giới hạn 512MB."""
+    """Tải file theo chunking với giới hạn 512MB và cơ chế fallback curl_cffi chống 403."""
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/122.0.0.0 Safari/537.36",
         "Referer": "https://www.tiktok.com/"
@@ -464,7 +464,25 @@ async def download_file_to_path(url: str, save_path: str, max_size_mb: int = 512
         async with aiohttp.ClientSession() as session:
             async with session.get(url, headers=headers, timeout=aiohttp.ClientTimeout(total=300)) as resp:
                 if resp.status not in (200, 206):
-                    return False, f"Máy chủ video phản hồi mã lỗi {resp.status}"
+                    # Fallback sang curl_cffi nếu CDN chặn bot (403 Forbidden)
+                    try:
+                        from curl_cffi import requests as cffi_requests
+                        def _curl_download():
+                            with cffi_requests.get(url, impersonate="chrome120", timeout=300, stream=True) as r:
+                                if r.status_code not in (200, 206):
+                                    return False, f"Máy chủ phản hồi mã lỗi {r.status_code}"
+                                dl = 0
+                                with open(save_path, "wb") as f_out:
+                                    for chunk in r.iter_content(chunk_size=65536):
+                                        if chunk:
+                                            dl += len(chunk)
+                                            if dl > max_bytes:
+                                                return False, f"File quá lớn vượt quá {max_size_mb}MB"
+                                            f_out.write(chunk)
+                                return True, None
+                        return await asyncio.to_thread(_curl_download)
+                    except Exception as e_cffi:
+                        return False, f"Máy chủ video phản hồi mã lỗi {resp.status} (Fallback: {e_cffi})"
 
                 content_len = resp.headers.get("Content-Length")
                 if content_len and int(content_len) > max_bytes:
@@ -486,10 +504,28 @@ async def download_file_to_path(url: str, save_path: str, max_size_mb: int = 512
     except asyncio.TimeoutError:
         return False, "Quá thời gian tải file từ máy chủ."
     except Exception as e:
-        return False, f"Lỗi tải file: {str(e)}"
+        # Fallback thử curl_cffi nếu aiohttp gặp lỗi kết nối
+        try:
+            from curl_cffi import requests as cffi_requests
+            def _curl_fallback():
+                with cffi_requests.get(url, impersonate="chrome120", timeout=300, stream=True) as r:
+                    if r.status_code not in (200, 206):
+                        return False, f"Máy chủ phản hồi mã lỗi {r.status_code}"
+                    dl = 0
+                    with open(save_path, "wb") as f_out:
+                        for chunk in r.iter_content(chunk_size=65536):
+                            if chunk:
+                                dl += len(chunk)
+                                if dl > max_bytes:
+                                    return False, f"File quá lớn vượt quá {max_size_mb}MB"
+                                f_out.write(chunk)
+                    return True, None
+            return await asyncio.to_thread(_curl_fallback)
+        except Exception:
+            return False, f"Lỗi tải file: {str(e)}"
 
 async def download_thumbnail_to_path(thumb_url: str, save_path: str) -> bool:
-    """Tải ảnh bìa làm thumbnail để tránh ô vuông đen."""
+    """Tải ảnh bìa làm thumbnail để tránh ô vuông đen với hỗ trợ Chrome TLS impersonation."""
     if not thumb_url:
         return False
     headers = {
@@ -504,6 +540,20 @@ async def download_thumbnail_to_path(thumb_url: str, save_path: str) -> bool:
                     with open(save_path, "wb") as f:
                         f.write(content)
                     return True
+    except Exception:
+        pass
+
+    # Fallback với curl_cffi giả lập Chrome
+    try:
+        from curl_cffi import requests as cffi_requests
+        def _get_thumb():
+            res = cffi_requests.get(thumb_url, impersonate="chrome120", timeout=15)
+            if res.status_code == 200:
+                with open(save_path, "wb") as f:
+                    f.write(res.content)
+                return True
+            return False
+        return await asyncio.to_thread(_get_thumb)
     except Exception:
         pass
     return False

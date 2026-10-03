@@ -27,6 +27,8 @@ from telegram import (
     ChatMemberUpdated,
     constants
 )
+from telegram.request import HTTPXRequest
+from telegram.error import Conflict
 from telegram.ext import (
     Application,
     ApplicationBuilder,
@@ -61,7 +63,8 @@ from multi_platform_api import (
 )
 from shazam_service import (
     identify_song_from_path,
-    build_shazam_card
+    build_shazam_card,
+    SHAZAM_CACHE
 )
 from stats_formatter import (
     build_video_stats_message,
@@ -527,7 +530,9 @@ async def send_downloaded_media(
                     caption=caption,
                     parse_mode=constants.ParseMode.HTML,
                     reply_to_message_id=reply_to,
-                    disable_notification=silent_notify
+                    disable_notification=silent_notify,
+                    read_timeout=180.0,
+                    write_timeout=180.0
                 )
             else:
                 # Gửi dạng Video chuẩn
@@ -542,7 +547,9 @@ async def send_downloaded_media(
                     parse_mode=constants.ParseMode.HTML,
                     supports_streaming=True,
                     reply_to_message_id=reply_to,
-                    disable_notification=silent_notify
+                    disable_notification=silent_notify,
+                    read_timeout=180.0,
+                    write_timeout=180.0
                 )
 
         # Xóa tin nhắn chờ
@@ -983,7 +990,10 @@ async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TY
     if not query or not query.data:
         return
 
-    await query.answer()
+    try:
+        await query.answer()
+    except Exception:
+        pass
     data_str = query.data
     chat_id = update.effective_chat.id
     user_id = update.effective_user.id if update.effective_user else 0
@@ -1323,12 +1333,19 @@ async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TY
                 except Exception: pass
         return
 
-    # Tải MP3 từ kết quả nhận diện Shazam
-    if data_str.startswith("dl_shazam_mp3:"):
-        meta_str = data_str.split(":", 1)[1]
-        parts = meta_str.split("|")
-        s_title = parts[0]
-        s_artist = parts[1] if len(parts) > 1 else ""
+    # Tải MP3 từ kết quả nhận diện Shazam (hỗ trợ cả short cache ID và legacy text)
+    if data_str.startswith("dl_sh_mp3:") or data_str.startswith("dl_shazam_mp3:"):
+        if data_str.startswith("dl_sh_mp3:"):
+            s_id = data_str.split(":", 1)[1]
+            cached_track = SHAZAM_CACHE.get(s_id, {})
+            s_title = cached_track.get("title", "Unknown Track")
+            s_artist = cached_track.get("artist", "")
+        else:
+            meta_str = data_str.split(":", 1)[1]
+            parts = meta_str.split("|")
+            s_title = parts[0]
+            s_artist = parts[1] if len(parts) > 1 else ""
+
         wait_msg = await query.message.reply_text(f"⏳ <b>Đang tìm và tải MP3 320 kbps bài hát '{s_title}'...</b>", parse_mode=constants.ParseMode.HTML)
         unique_id = uuid.uuid4().hex[:8]
         tmp_mp3 = os.path.join(tempfile.gettempdir(), f"shazam_dl_{chat_id}_{unique_id}.mp3")
@@ -1343,7 +1360,9 @@ async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TY
                         title=s_title,
                         performer=s_artist,
                         caption=f"🎵 <b>{s_title}</b> - <code>{s_artist}</code>\n💎 <b>MP3 320 kbps (Nhận diện bởi Shazam)</b>",
-                        parse_mode=constants.ParseMode.HTML
+                        parse_mode=constants.ParseMode.HTML,
+                        read_timeout=180.0,
+                        write_timeout=180.0
                     )
                 database.record_download(user_id, "shazam_mp3")
                 await wait_msg.delete()
@@ -1454,7 +1473,7 @@ async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TY
             await query.message.reply_text("⚠️ Dữ liệu đã hết hạn. Vui lòng gửi lại link.")
             return
 
-        cover_url = cached["data"].get("cover")
+        cover_url = cached["data"].get("cover") or cached["data"].get("origin_cover")
         if not cover_url:
             await query.message.reply_text("❌ Không tìm thấy ảnh bìa gốc của media này.")
             return
@@ -1463,13 +1482,33 @@ async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TY
         tmp_img = os.path.join(tempfile.gettempdir(), f"cover_{chat_id}_{media_id}.jpg")
         try:
             dl_ok, dl_err = await download_file_to_path(cover_url, tmp_img, max_size_mb=20)
+            if not dl_ok and cached["data"].get("origin_cover") and cover_url != cached["data"].get("origin_cover"):
+                cover_url = cached["data"].get("origin_cover")
+                dl_ok, dl_err = await download_file_to_path(cover_url, tmp_img, max_size_mb=20)
+
             if dl_ok and os.path.exists(tmp_img):
+                # Tự động nhận diện định dạng ảnh thực tế (WebP, PNG, JPG)
+                ext = ".jpg"
+                try:
+                    with open(tmp_img, "rb") as tf:
+                        header = tf.read(12)
+                        if header.startswith(b"RIFF") and b"WEBP" in header:
+                            ext = ".webp"
+                        elif header.startswith(b"\x89PNG"):
+                            ext = ".png"
+                except Exception:
+                    pass
+
+                final_filename = f"cover_{media_id}{ext}"
                 with open(tmp_img, "rb") as pf:
                     await context.bot.send_document(
                         chat_id=chat_id,
                         document=pf,
+                        filename=final_filename,
                         caption=f"🖼️ <b>Ảnh Bìa / Preview Frame Gốc (Full Size)</b>\n🤖 <i>TikTok-Tweaks Bot</i>",
-                        parse_mode=constants.ParseMode.HTML
+                        parse_mode=constants.ParseMode.HTML,
+                        read_timeout=180.0,
+                        write_timeout=180.0
                     )
                 await wait_msg.delete()
             else:
@@ -1634,7 +1673,14 @@ def main() -> None:
         print("=" * 60)
         sys.exit(1)
 
-    app = ApplicationBuilder().token(config.BOT_TOKEN).build()
+    # Cấu hình HTTPXRequest với timeout dài để hỗ trợ upload video lớn không bị 'Timed out'
+    req_builder = HTTPXRequest(
+        read_timeout=180.0,
+        write_timeout=180.0,
+        connect_timeout=60.0,
+        pool_timeout=60.0
+    )
+    app = ApplicationBuilder().token(config.BOT_TOKEN).request(req_builder).build()
 
     # Đăng ký các lệnh
     app.add_handler(CommandHandler("start", start_command))
@@ -1671,7 +1717,11 @@ def main() -> None:
     print(f"👥 Tự động tải trong Group: {'BẬT' if config.GROUP_AUTO_DOWNLOAD else 'TẮT'}")
     print(" Nhấn Ctrl+C để dừng bot.")
 
-    app.run_polling(drop_pending_updates=True)
+    try:
+        app.run_polling(drop_pending_updates=True)
+    except Conflict:
+        print("\n⚠️ CẢNH BÁO: Phát hiện phiên bản bot khác (hoặc dịch vụ gateway khác) đang chạy cùng lúc với BOT_TOKEN này (HTTP 409 Conflict)!")
+        print("Vui lòng tắt phiên bot cũ trước khi khởi động lại.\n")
 
 if __name__ == "__main__":
     main()

@@ -2,7 +2,12 @@ import os
 import sys
 import subprocess
 import urllib.parse
+import uuid
 from typing import Optional, Dict, Any, Tuple
+
+# Bộ nhớ đệm lưu trữ kết quả Shazam theo ID ngắn (tránh lỗi Telegram Button_data_invalid > 64 bytes)
+SHAZAM_CACHE: Dict[str, Dict[str, Any]] = {}
+
 import imageio_ffmpeg
 
 # Đảm bảo ffmpeg được cấu hình đúng
@@ -178,9 +183,13 @@ def build_shazam_card(info: Dict[str, Any]) -> Tuple[str, InlineKeyboardMarkup]:
     if row2:
         buttons.append(row2)
 
-    # Nút tìm kiếm tải mp3
+    # Lưu cache để tránh vượt quá 64 bytes callback_data của Telegram
+    s_id = uuid.uuid4().hex[:8]
+    SHAZAM_CACHE[s_id] = info
+
+    # Nút tìm kiếm tải mp3 với short id
     buttons.append([
-        InlineKeyboardButton("⬇️ Tải MP3 320kbps bài hát này", callback_data=f"dl_shazam_mp3:{title[:30]}|{artist[:30]}")
+        InlineKeyboardButton("⬇️ Tải MP3 320kbps bài hát này", callback_data=f"dl_sh_mp3:{s_id}")
     ])
 
     return text, InlineKeyboardMarkup(buttons)
