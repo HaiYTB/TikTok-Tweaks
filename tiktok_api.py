@@ -531,17 +531,14 @@ async def download_thumbnail_to_path(thumb_url: str, save_path: str) -> bool:
     except Exception:
         pass
 
-    # Fallback với curl_cffi giả lập Chrome
+    # Fallback với curl_cffi impersonate Chrome để vượt qua 403
     try:
-        from curl_cffi import requests as cffi_requests
-        def _get_thumb():
-            res = cffi_requests.get(thumb_url, impersonate="chrome120", timeout=15)
-            if res.status_code == 200:
-                with open(save_path, "wb") as f:
-                    f.write(res.content)
-                return True
-            return False
-        return await asyncio.to_thread(_get_thumb)
+        from curl_cffi import requests as c_requests
+        c_resp = await asyncio.to_thread(c_requests.get, thumb_url, impersonate="chrome", timeout=15)
+        if c_resp.status_code == 200 and len(c_resp.content) > 0:
+            with open(save_path, "wb") as f:
+                f.write(c_resp.content)
+            return True
     except Exception:
         pass
     return False
