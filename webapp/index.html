@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>TikTok-Tweaks Profile & Settings</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    :root {
+      --bg-gradient: linear-gradient(135deg, #0a0c16 0%, #101326 50%, #0d0f1d 100%);
+      --accent-primary: #00f2fe;
+      --accent-secondary: #4facfe;
+      --accent-pink: #fe2c55;
+      --accent-purple: #8a2be2;
+      --card-bg: rgba(255, 255, 255, 0.04);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --card-hover: rgba(255, 255, 255, 0.07);
+      --text-main: #ffffff;
+      --text-muted: #8e9bb0;
+      --glass-glow: 0 8px 32px 0 rgba(0, 242, 254, 0.15);
+      --radius: 20px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    body {
+      font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-gradient);
+      color: var(--text-main);
+      min-height: 100vh;
+      padding: 16px;
+      padding-bottom: 40px;
+      overflow-x: hidden;
+    }
+
+    .ambient-glow {
+      position: fixed;
+      width: 300px;
+      height: 300px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(0, 242, 254, 0.12) 0%, transparent 70%);
+      top: -100px;
+      right: -100px;
+      z-index: 0;
+      pointer-events: none;
+      filter: blur(40px);
+    }
+
+    .ambient-glow-2 {
+      position: fixed;
+      width: 250px;
+      height: 250px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(254, 44, 85, 0.1) 0%, transparent 70%);
+      bottom: 50px;
+      left: -80px;
+      z-index: 0;
+      pointer-events: none;
+      filter: blur(40px);
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 480px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    /* Header Profile Card */
+    .profile-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-radius: var(--radius);
+      padding: 22px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      box-shadow: var(--glass-glow);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .profile-card::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent-pink), var(--accent-primary), var(--accent-purple));
+    }
+
+    .avatar {
+      width: 68px;
+      height: 68px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #fe2c55 0%, #4facfe 100%);
+      padding: 3px;
+      box-shadow: 0 4px 20px rgba(0, 242, 254, 0.3);
+      flex-shrink: 0;
+    }
+
+    .avatar img {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+      background: #151828;
+    }
+
+    .profile-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .profile-name {
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .profile-id {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: 3px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .badge-pro {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 20px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      background: linear-gradient(90deg, #ff8a00, #e52e71);
+      color: #fff;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Numbers / Stats Grid */
+    .section-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-left: 4px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .stat-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(12px);
+      border-radius: 16px;
+      padding: 16px 12px;
+      text-align: center;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .stat-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(0, 242, 254, 0.3);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .stat-icon {
+      font-size: 1.5rem;
+      margin-bottom: 6px;
+    }
+
+    .stat-value {
+      font-size: 1.4rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #fff 40%, var(--accent-primary) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .stat-label {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 600;
+      margin-top: 4px;
+    }
+
+    /* Platform Pills */
+    .platforms-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .platform-pill {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 10px 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.82rem;
+      font-weight: 600;
+    }
+
+    .platform-pill span.count {
+      margin-left: auto;
+      background: rgba(255, 255, 255, 0.08);
+      padding: 2px 7px;
+      border-radius: 10px;
+      font-size: 0.75rem;
+      color: var(--accent-primary);
+    }
+
+    /* Settings Box */
+    .settings-group {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(20px);
+      border-radius: var(--radius);
+      padding: 8px 18px;
+    }
+
+    .setting-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .setting-row:last-child {
+      border-bottom: none;
+    }
+
+    .setting-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .setting-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+
+    .setting-desc {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    /* Segmented Control */
+    .segmented-control {
+      display: flex;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 12px;
+      padding: 3px;
+      gap: 3px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .segment-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-family: inherit;
+      font-size: 0.78rem;
+      font-weight: 600;
+      padding: 6px 10px;
+      border-radius: 9px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .segment-btn.active {
+      background: linear-gradient(135deg, var(--accent-secondary), var(--accent-primary));
+      color: #0b0f19;
+      font-weight: 700;
+      box-shadow: 0 2px 10px rgba(0, 242, 254, 0.3);
+    }
+
+    /* Modern Switch */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 48px;
+      height: 26px;
+      flex-shrink: 0;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 34px;
+      transition: 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 20px;
+      width: 20px;
+      left: 3px;
+      bottom: 3px;
+      background: white;
+      border-radius: 50%;
+      transition: 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    }
+
+    input:checked + .slider {
+      background: linear-gradient(135deg, var(--accent-pink), #ff5858);
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(22px);
+    }
+
+    /* Save Button */
+    .btn-save {
+      background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+      color: #050811;
+      border: none;
+      padding: 16px;
+      border-radius: 16px;
+      font-family: inherit;
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      box-shadow: 0 6px 25px rgba(0, 242, 254, 0.35);
+      transition: all 0.3s ease;
+      margin-top: 6px;
+    }
+
+    .btn-save:active {
+      transform: scale(0.98);
+      filter: brightness(1.1);
+    }
+  </style>
+</head>
+<body>
+  <div class="ambient-glow"></div>
+  <div class="ambient-glow-2"></div>
+
+  <div class="container">
+    <!-- Profile Card -->
+    <div class="profile-card">
+      <div class="avatar">
+        <img id="avatar-img" src="https://api.dicebear.com/7.x/bottts/svg?seed=TikTokTweaks" alt="Avatar">
+      </div>
+      <div class="profile-info">
+        <div class="profile-name" id="user-name">Người dùng Telegram</div>
+        <div class="profile-id">
+          <span id="user-id">ID: @username</span>
+          <span class="badge-pro">PRO UNLIMITED</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Real Numbers Overview -->
+    <div class="section-title">📊 Số liệu thực tế (Real Stats)</div>
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon">⚡</div>
+        <div class="stat-value" id="stat-downloads">0</div>
+        <div class="stat-label">Downloads</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">🔍</div>
+        <div class="stat-value" id="stat-checks">0</div>
+        <div class="stat-label">Checks</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">🎧</div>
+        <div class="stat-value" id="stat-shazams">0</div>
+        <div class="stat-label">Shazams</div>
+      </div>
+    </div>
+
+    <!-- Platform Breakdown -->
+    <div class="section-title">🌐 Lượt tải theo nền tảng</div>
+    <div class="platforms-grid">
+      <div class="platform-pill">🎵 TikTok <span class="count" id="count-tt">0</span></div>
+      <div class="platform-pill">📸 Instagram <span class="count" id="count-ig">0</span></div>
+      <div class="platform-pill">🔴 YouTube <span class="count" id="count-yt">0</span></div>
+      <div class="platform-pill">🐦 Twitter / X <span class="count" id="count-tw">0</span></div>
+      <div class="platform-pill">📌 Pinterest <span class="count" id="count-pin">0</span></div>
+      <div class="platform-pill">🟢 Spotify <span class="count" id="count-sp">0</span></div>
+    </div>
+
+    <!-- Switches in one screen -->
+    <div class="section-title">⚙️ Cài đặt tương tác (All Switches)</div>
+    <div class="settings-group">
+      <!-- Ngôn ngữ -->
+      <div class="setting-row">
+        <div class="setting-meta">
+          <div class="setting-title">🌐 Ngôn ngữ (Language)</div>
+          <div class="setting-desc">Giao diện phản hồi của Bot</div>
+        </div>
+        <div class="segmented-control" id="ctrl-lang">
+          <button class="segment-btn active" data-val="vi">VI</button>
+          <button class="segment-btn" data-val="en">EN</button>
+          <button class="segment-btn" data-val="ru">RU</button>
+        </div>
+      </div>
+
+      <!-- Chế độ phản hồi -->
+      <div class="setting-row">
+        <div class="setting-meta">
+          <div class="setting-title">💬 Chế độ gửi (Reply Mode)</div>
+          <div class="setting-desc">Trực tiếp / Reply / Im lặng</div>
+        </div>
+        <div class="segmented-control" id="ctrl-reply">
+          <button class="segment-btn active" data-val="direct">Trực tiếp</button>
+          <button class="segment-btn" data-val="reply">Reply</button>
+          <button class="segment-btn" data-val="silent">Im lặng</button>
+        </div>
+      </div>
+
+      <!-- Caption -->
+      <div class="setting-row">
+        <div class="setting-meta">
+          <div class="setting-title">📝 Chú thích (Caption)</div>
+          <div class="setting-desc">Định dạng chữ kèm file tải</div>
+        </div>
+        <div class="segmented-control" id="ctrl-caption">
+          <button class="segment-btn active" data-val="full">Đầy đủ</button>
+          <button class="segment-btn" data-val="minimal">Gọn</button>
+          <button class="segment-btn" data-val="none">Tắt</button>
+        </div>
+      </div>
+
+      <!-- Document mode uncompressed -->
+      <div class="setting-row">
+        <div class="setting-meta">
+          <div class="setting-title">📁 File Gốc (Document Mode)</div>
+          <div class="setting-desc">Gửi file nguyên bản không nén</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="chk-doc">
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <!-- No Signature -->
+      <div class="setting-row">
+        <div class="setting-meta">
+          <div class="setting-title">🛡️ Bỏ chữ ký (No Signature)</div>
+          <div class="setting-desc">Xóa link bot khỏi chú thích</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="chk-nosig">
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Save Button -->
+    <button class="btn-save" id="btn-save">
+      <span>💾 Lưu Cài Đặt Cá Nhân</span>
+    </button>
+  </div>
+
+  <script>
+    // Telegram WebApp Initialization
+    const tg = window.Telegram?.WebApp;
+    if (tg) {
+      tg.expand();
+      tg.ready();
+    }
+
+    // Parse URL params for real user statistics
+    const urlParams = new URLSearchParams(window.location.search);
+    const userId = urlParams.get('user_id') || tg?.initDataUnsafe?.user?.id || '99999999';
+    const userName = urlParams.get('name') || tg?.initDataUnsafe?.user?.first_name || 'TikTok Tweaks Fan';
+    const userTag = urlParams.get('username') || tg?.initDataUnsafe?.user?.username || 'member';
+
+    document.getElementById('user-name').innerText = userName;
+    document.getElementById('user-id').innerText = `@${userTag} (ID: ${userId})`;
+
+    // Populate Real Numbers
+    document.getElementById('stat-downloads').innerText = urlParams.get('dl') || '0';
+    document.getElementById('stat-checks').innerText = urlParams.get('ck') || '0';
+    document.getElementById('stat-shazams').innerText = urlParams.get('sh') || '0';
+
+    document.getElementById('count-tt').innerText = urlParams.get('tt') || '0';
+    document.getElementById('count-ig').innerText = urlParams.get('ig') || '0';
+    document.getElementById('count-yt').innerText = urlParams.get('yt') || '0';
+    document.getElementById('count-tw').innerText = urlParams.get('tw') || '0';
+    document.getElementById('count-pin').innerText = urlParams.get('pin') || '0';
+    document.getElementById('count-sp').innerText = urlParams.get('sp') || '0';
+
+    // Populate Current Switches
+    let currentLang = urlParams.get('lang') || 'vi';
+    let currentReply = urlParams.get('reply') || 'direct';
+    let currentCaption = urlParams.get('caption') || 'full';
+    let docMode = urlParams.get('doc') === '1';
+    let noSig = urlParams.get('nosig') === '1';
+
+    function setSegmentActive(containerId, value) {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+      container.querySelectorAll('.segment-btn').forEach(btn => {
+        if (btn.getAttribute('data-val') === value) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+    }
+
+    setSegmentActive('ctrl-lang', currentLang);
+    setSegmentActive('ctrl-reply', currentReply);
+    setSegmentActive('ctrl-caption', currentCaption);
+    document.getElementById('chk-doc').checked = docMode;
+    document.getElementById('chk-nosig').checked = noSig;
+
+    // Segment Click Handlers
+    function setupSegmentListener(containerId, callback) {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+      container.querySelectorAll('.segment-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          container.querySelectorAll('.segment-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          callback(btn.getAttribute('data-val'));
+          if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+        });
+      });
+    }
+
+    setupSegmentListener('ctrl-lang', v => currentLang = v);
+    setupSegmentListener('ctrl-reply', v => currentReply = v);
+    setupSegmentListener('ctrl-caption', v => currentCaption = v);
+
+    // Save Button
+    document.getElementById('btn-save').addEventListener('click', () => {
+      const settings = {
+        action: "save_settings",
+        user_id: userId,
+        language: currentLang,
+        reply_mode: currentReply,
+        caption_mode: currentCaption,
+        doc_mode: document.getElementById('chk-doc').checked ? 1 : 0,
+        no_signature: document.getElementById('chk-nosig').checked ? 1 : 0
+      };
+
+      if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+
+      if (tg && typeof tg.sendData === 'function') {
+        tg.sendData(JSON.stringify(settings));
+      } else {
+        alert("✅ Đã lưu cài đặt thành công:\n" + JSON.stringify(settings, null, 2));
+      }
+    });
+  </script>
+</body>
+</html>
