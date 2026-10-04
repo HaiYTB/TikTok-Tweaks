@@ -184,48 +184,25 @@ def build_video_stats_message(data: Dict[str, Any]) -> str:
 
     message = (
         f"{preview_tag}"
-        f"👑 <b>TIKTOK-TWEAKS PREMIUM CHECKER</b>\n"
-        f"━━━━━━━━━━━━━━━━━━━━\n"
-        f"🎬 <b>{title}</b>\n\n"
-        f"🆔 <b>Video ID:</b> <code>{video_id}</code>\n"
-        f"👤 <b>Tác giả:</b> {nickname} (@{unique_id})\n"
-        f"⏱️ <b>Duration:</b> <code>{duration_str}</code>\n"
-        f"📦 <b>Format:</b> <code>{fmt}</code>\n"
-        f"🎞️ <b>Codec:</b> <code>{codec}</code>\n"
-        f"📐 <b>Resolution:</b> <code>{width}x{height}</code>\n"
-        f"📍 <b>Upload Source:</b> <b>{upload_source}</b>\n"
-        f"🎯 <b>Category:</b> <b>{category}</b>\n"
-        f"🔍 <b>Search Keywords:</b> <i>{keywords_str}</i>\n\n"
-        f"📊 <b>THỐNG KÊ TƯƠNG TÁC (CHÍNH XÁC TỪNG LƯỢT)</b>\n"
-        f"├ 👁️ Views: <code>{views_exact}</code>\n"
-        f"├ ❤️ Likes: <code>{likes_exact}</code>\n"
-        f"├ 💬 Comments: <code>{comments_exact}</code>\n"
-        f"├ 🔄 Shares: <code>{shares_exact}</code>\n"
-        f"├ ⭐ Favorites: <code>{collects_exact}</code>\n"
-        f"└ 📥 Downloads: <code>{downloads_exact}</code>\n\n"
-        f"💎 <b>TIKTOK VQSCORE COMPRESSION:</b>\n"
-        f"└ 🏆 Điểm chất lượng: <b>{vq_score}/100</b> — {vq_label}\n\n"
-        f"🌐 <b>BROWSER SPECS:</b>\n"
-        f"├ 🚀 FPS: <code>{browser_fps:.1f} fps</code> (Web Standard)\n"
-        f"├ ⚡ Bitrate: <code>{browser_bitrate:.2f} Mbps</code>\n"
-        f"└ 💾 File size: <code>{browser_size:.2f} MB</code>\n\n"
-        f"📱 <b>MOBILE APP SPECS:</b>\n"
-        f"├ 🚀 FPS: <code>{app_fps:.1f} fps</code> (Original High-Refresh)\n"
-        f"├ ⚡ Bitrate: <code>{app_bitrate:.2f} Mbps</code> (Adaptive Stream)\n"
-        f"└ 💾 File size: <code>{app_size:.2f} MB</code> (Original Quality)\n"
-        f"<i>💡 Ghi chú: Mobile App dùng chuẩn nén H.265 (HEVC) nên dung lượng nhẹ hơn 40-50% so với Browser H.264 dù cùng độ phân giải 1080p sắc nét.</i>\n"
-        f"<i>⚠️ P.S. Quality in the mobile app depends on multiple factors (TikTok version, the phone used for viewing, region, internet connection quality, etc.)</i>\n\n"
-        f"🎛️ <b>QUALITY PRESETS CATEGORY:</b>\n"
-        f"├ 💎 <b>1080p Original:</b> HEVC/AVC Max Bitrate ({app_size:.1f}MB)\n"
-        f"├ ⚡ <b>720p HD:</b> H.264 Web / Standard ({browser_size:.1f}MB)\n"
-        f"├ 📱 <b>540p Mobile:</b> Compact Stream (Tiết kiệm data)\n"
-        f"└ 🎧 <b>MP3 Audio:</b> 128 - 320 kbps Stereo\n\n"
-        f"🔍 <b>THÔNG TIN XUẤT BẢN & SHADOWBAN:</b>\n"
-        f"├ 📅 <b>Creation date (GMT+0):</b> <code>{created_date}</code>\n"
-        f"├ 🛡️ <b>Shadowban status:</b> {shadowban_status}\n"
-        f"├ 🌍 <b>Upload country:</b> <b>{upload_country}</b>\n"
-        f"└ 🎵 <b>Audio Track Link:</b> {audio_direct_link}\n\n"
-        f"<i>💡 Chọn tùy chọn tải bên dưới hoặc xem phân tích Profile:</i>"
+        f"<b>TikTok Inspector</b> • <code>{video_id}</code>\n"
+        f"🎬 <b>{title}</b>\n"
+        f"👤 By <b>{nickname}</b> (<code>@{unique_id}</code>) • {upload_country}\n\n"
+        f"📊 <b>Engagement Metrics</b>\n"
+        f"• Views: <code>{views_exact}</code> • Likes: <code>{likes_exact}</code>\n"
+        f"• Comments: <code>{comments_exact}</code> • Shares: <code>{shares_exact}</code>\n"
+        f"• Saves: <code>{collects_exact}</code> • Downloads: <code>{downloads_exact}</code>\n\n"
+        f"⚡ <b>Stream Specifications</b>\n"
+        f"• Resolution: <code>{width}×{height}</code> ({fmt} • {codec})\n"
+        f"• Mobile App: <code>{app_fps:.0f} FPS</code> • <code>{app_bitrate:.2f} Mbps</code> (HEVC, {app_size:.1f} MB)\n"
+        f"• Web Browser: <code>{browser_fps:.0f} FPS</code> • <code>{browser_bitrate:.2f} Mbps</code> (H.264, {browser_size:.1f} MB)\n"
+        f"• Quality Score: <b>{vq_score}/100</b> ({vq_label})\n"
+        f"• Source: <b>{upload_source}</b> • ⏱️ <code>{duration_str}</code>\n\n"
+        f"🔍 <b>Details</b>\n"
+        f"• Category: <b>{category}</b>\n"
+        f"• Keywords: <i>{keywords_str}</i>\n"
+        f"• Published (GMT+0): <code>{created_date}</code>\n"
+        f"• Shadowban: {shadowban_status}\n"
+        f"• Audio Track: {audio_direct_link}\n"
     )
     return message
 
@@ -233,7 +210,7 @@ def build_profile_analytics_message(username: str, nickname: str, videos: List[D
     """Tạo bảng phân tích thống kê 12 video gần nhất của tác giả (Profile Analytics)."""
     if not videos:
         return (
-            f"📈 <b>PHÂN TÍCH PROFILE: @{username}</b>\n\n"
+            f"📊 <b>Author Analytics</b> • <code>@{username}</code>\n\n"
             f"⚠️ Không thể tải danh sách video gần đây của tài khoản này (Kênh có thể ở chế độ riêng tư hoặc bị giới hạn)."
         )
 
@@ -251,48 +228,42 @@ def build_profile_analytics_message(username: str, nickname: str, videos: List[D
     worst_vid = min(videos, key=lambda x: x["views"])
 
     lines = [
-        f"👑 <b>HỒ SƠ TÁC GIẢ & PHÂN TÍCH 12 VIDEO GẦN NHẤT</b>",
-        f"━━━━━━━━━━━━━━━━━━━━",
-        f"👤 <b>Kênh:</b> {nickname} (@{username})",
-        f"📊 <b>Tổng số video phân tích:</b> <code>{count} video</code>\n",
-        f"📈 <b>TỔNG QUAN HIỆU SUẤT TRUNG BÌNH:</b>",
-        f"├ 👁️ Lượt xem trung bình: <b>{avg_views:,} views/video</b>",
-        f"├ ❤️ Lượt thích trung bình: <b>{avg_likes:,} likes/video</b>",
-        f"├ 💬 Bình luận trung bình: <b>{total_comments // count:,} cmt/video</b>",
-        f"├ ⚡ Tỷ lệ tương tác (ER): <b>{avg_engagement:.2f}%</b>",
-        f"├ 🏆 Video top 1 view: <b>{best_vid['views']:,} views</b> (ID: <code>{best_vid['id']}</code>)",
-        f"└ 📉 Video thấp nhất: <b>{worst_vid['views']:,} views</b> (ID: <code>{worst_vid['id']}</code>)\n",
-        f"🎬 <b>DANH SÁCH {count} VIDEO MỚI NHẤT:</b>"
+        f"📊 <b>Author Analytics</b> • <code>@{username}</code>",
+        f"👤 <b>Channel:</b> {nickname} • {count} recent uploads analyzed\n",
+        f"📈 <b>Average Performance</b>",
+        f"• Views / Video: <code>{avg_views:,}</code>",
+        f"• Likes / Video: <code>{avg_likes:,}</code>",
+        f"• Comments / Video: <code>{total_comments // count if count > 0 else 0:,}</code>",
+        f"• Engagement Rate: <b>{avg_engagement:.2f}%</b>\n",
+        f"🏆 <b>Top Performer:</b> <code>{best_vid['views']:,}</code> views (ID: <code>{best_vid['id']}</code>)",
+        f"📉 <b>Lowest Performer:</b> <code>{worst_vid['views']:,}</code> views\n",
+        f"🎬 <b>Recent Videos</b>"
     ]
 
     for i, v in enumerate(videos[:12], 1):
-        v_title = v["title"][:28] + "..." if len(v["title"]) > 28 else v["title"]
+        v_title = v["title"][:32] + "..." if len(v["title"]) > 32 else v["title"]
         lines.append(
             f"{i:02d}. <a href='{v['url']}'>{v_title}</a>\n"
-            f"   └ 👁️ <code>{v['views']:,}</code> | ❤️ <code>{v['likes']:,}</code> | ⏱️ <code>{v['duration']}s</code>"
+            f"    👁️ <code>{v['views']:,}</code> • ❤️ <code>{v['likes']:,}</code> • ⏱️ <code>{v['duration']}s</code>"
         )
 
-    lines.append("\n<i>💡 Dữ liệu được trích xuất trực tiếp thời gian thực từ TikTok Studio.</i>")
     return "\n".join(lines)
 
 def build_similar_videos_message(data: Dict[str, Any]) -> str:
     """Tạo bảng gợi ý video tương tự theo thuật toán TikTok (Similar Videos)."""
     meta = data.get("_meta") or {}
-    category = meta.get("category", "Giải trí")
+    category = meta.get("category", "Entertainment")
     keywords = meta.get("keywords") or []
     tags_str = ", ".join([f"#{k}" for k in keywords[:6]]) if keywords else "#fyp, #viral"
 
     msg = (
-        f"🔮 <b>WHAT TIKTOK CONSIDERS RELATED (VIDEO TƯƠNG TỰ)</b>\n"
-        f"━━━━━━━━━━━━━━━━━━━━\n"
-        f"🎯 <b>Cụm chủ đề thuật toán:</b> <b>{category}</b>\n"
-        f"🏷️ <b>Thẻ liên kết FYP:</b> <i>{tags_str}</i>\n\n"
-        f"📌 <b>Cách thuật toán TikTok đề xuất nội dung tương tự:</b>\n"
-        f"1. <b>Theo âm thanh:</b> Những video cùng sử dụng nhạc nền này đang được gom nhóm vào chung luồng FYP.\n"
-        f"2. <b>Theo từ khóa:</b> Video của bạn xuất hiện trong cụm tìm kiếm: <code>{tags_str}</code>\n"
-        f"3. <b>Theo hành vi người xem:</b> Người thích video này cũng thường xem các video cùng chủ đề <b>{category}</b>.\n\n"
-        f"🔗 <b>Khám phá thêm trên TikTok:</b>\n"
-        f"• <a href='https://www.tiktok.com/tag/{keywords[0] if keywords else 'trending'}'>Xem xu hướng hashtag tương tự</a>\n"
+        f"🔮 <b>TikTok Recommendation Insights</b>\n\n"
+        f"🎯 <b>Algorithmic Cluster:</b> <b>{category}</b>\n"
+        f"🏷️ <b>Associated Keywords:</b> <i>{tags_str}</i>\n\n"
+        f"📌 <b>Recommendation Factors:</b>\n"
+        f"• <b>Audio Graph:</b> Videos utilizing this audio track are clustered into this FYP stream.\n"
+        f"• <b>Search Context:</b> Indexed under query graph: <code>{tags_str}</code>\n"
+        f"• <b>Audience Overlap:</b> Viewers of this video engage heavily in <b>{category}</b>.\n"
     )
     return msg
 
@@ -301,18 +272,16 @@ def build_user_info_message(data: Dict[str, Any]) -> str:
     author = data.get("author") or {}
     user_id = author.get("id", "N/A")
     unique_id = author.get("unique_id", "user")
-    nickname = author.get("nickname", "Không có tên")
+    nickname = author.get("nickname", "Unknown")
     profile_url = f"https://www.tiktok.com/@{unique_id}"
     country = get_country_display(data.get("region"))
 
     msg = (
-        f"👤 <b>HỒ SƠ TÁC GIẢ (USER INFORMATION)</b>\n"
-        f"━━━━━━━━━━━━━━━━━━━━\n"
-        f"🆔 <b>User ID:</b> <code>{user_id}</code>\n"
-        f"🏷️ <b>Username:</b> @{unique_id}\n"
-        f"📛 <b>Nickname:</b> {nickname}\n"
-        f"🌍 <b>Khu vực đăng ký:</b> {country}\n"
-        f"🔗 <b>Trang cá nhân:</b> <a href='{profile_url}'>{profile_url}</a>\n"
+        f"👤 <b>Author Profile</b>\n\n"
+        f"• Username: @{unique_id} (ID: <code>{user_id}</code>)\n"
+        f"• Nickname: <b>{nickname}</b>\n"
+        f"• Region: {country}\n"
+        f"• Link: <a href='{profile_url}'>{profile_url}</a>\n"
     )
     return msg
 
@@ -333,15 +302,11 @@ def build_instagram_stats_message(data: Dict[str, Any]) -> str:
 
     msg = (
         f"{preview_tag}"
-        f"📸 <b>INSTAGRAM MEDIA DOWNLOADER</b>\n"
-        f"━━━━━━━━━━━━━━━━━━━━\n"
-        f"🎬 <b>{title}</b>\n\n"
-        f"👤 <b>Tác giả:</b> {nickname} (@{unique_id})\n"
-        f"⏱️ <b>Thời lượng:</b> <code>{duration}s</code>\n"
-        f"📐 <b>Độ phân giải:</b> <code>{w}x{h}</code>\n"
-        f"❤️ <b>Likes:</b> <code>{format_exact_number(data.get('likes', 0))}</code>\n"
-        f"💬 <b>Comments:</b> <code>{format_exact_number(data.get('comments', 0))}</code>\n\n"
-        f"<i>💡 Bấm nút bên dưới để tải video Instagram không có logo:</i>"
+        f"📸 <b>Instagram Media</b>\n"
+        f"🎬 <b>{title}</b>\n"
+        f"👤 By <b>{nickname}</b> (<code>@{unique_id}</code>)\n\n"
+        f"• Duration: <code>{duration}s</code> • Resolution: <code>{w}×{h}</code>\n"
+        f"• Likes: <code>{format_exact_number(data.get('likes', 0))}</code> • Comments: <code>{format_exact_number(data.get('comments', 0))}</code>\n"
     )
     return msg
 
@@ -358,18 +323,14 @@ def build_youtube_stats_message(data: Dict[str, Any]) -> str:
     dur_str = f"{duration // 60}:{duration % 60:02d}" if duration >= 60 else f"{duration}s"
     is_4k = data.get("is_4k", False)
     max_h = data.get("max_height", 1080)
-    badge_4k = " 🏆 <b>4K ULTRA HD</b>" if is_4k else f" ⚡ <b>{max_h}p FHD</b>"
+    badge_4k = " • 🏆 <b>4K Ultra HD</b>" if is_4k else f" • ⚡ <b>{max_h}p FHD</b>"
 
     msg = (
         f"{preview_tag}"
-        f"🔴 <b>YOUTUBE DOWNLOADER</b>{badge_4k}\n"
-        f"━━━━━━━━━━━━━━━━━━━━\n"
-        f"🎬 <b>{title}</b>\n\n"
-        f"👤 <b>Kênh:</b> <code>{uploader}</code>\n"
-        f"⏱️ <b>Thời lượng:</b> <code>{dur_str}</code>\n"
-        f"👁️ <b>Lượt xem:</b> <code>{format_exact_number(data.get('views', 0))}</code>\n"
-        f"❤️ <b>Lượt thích:</b> <code>{format_exact_number(data.get('likes', 0))}</code>\n\n"
-        f"<i>💡 Chọn độ phân giải hoặc tải MP3 320kbps bên dưới:</i>"
+        f"🔴 <b>YouTube Media</b>{badge_4k}\n"
+        f"🎬 <b>{title}</b>\n"
+        f"👤 Channel: <code>{uploader}</code> • Duration: <code>{dur_str}</code>\n\n"
+        f"• Views: <code>{format_exact_number(data.get('views', 0))}</code> • Likes: <code>{format_exact_number(data.get('likes', 0))}</code>\n"
     )
     return msg
 
@@ -383,13 +344,10 @@ def build_twitter_stats_message(data: Dict[str, Any]) -> str:
 
     msg = (
         f"{preview_tag}"
-        f"🐦 <b>TWITTER / X DOWNLOADER</b>\n"
-        f"━━━━━━━━━━━━━━━━━━━━\n"
-        f"💬 <b>{title}</b>\n\n"
-        f"👤 <b>Tác giả:</b> <code>{uploader}</code>\n"
-        f"⏱️ <b>Thời lượng:</b> <code>{duration}s</code>\n"
-        f"❤️ <b>Lượt thích:</b> <code>{format_exact_number(data.get('likes', 0))}</code>\n\n"
-        f"<i>💡 Video chất lượng cao nhất không nén:</i>"
+        f"🐦 <b>Twitter / X Media</b>\n"
+        f"💬 <b>{title}</b>\n"
+        f"👤 By <code>{uploader}</code> • Duration: <code>{duration}s</code>\n"
+        f"• Likes: <code>{format_exact_number(data.get('likes', 0))}</code>\n"
     )
     return msg
 
@@ -400,16 +358,13 @@ def build_pinterest_stats_message(data: Dict[str, Any]) -> str:
     title = data.get("title") or "Pinterest Pin"
     uploader = data.get("uploader", "Pinterest Creator")
     is_vid = data.get("is_video", False)
-    media_type = "🎬 Video Pin (Không logo)" if is_vid else "🖼️ Ảnh gốc độ phân giải cao"
+    media_type = "🎬 Video Pin" if is_vid else "🖼️ HD Image"
 
     msg = (
         f"{preview_tag}"
-        f"📌 <b>PINTEREST DOWNLOADER</b>\n"
-        f"━━━━━━━━━━━━━━━━━━━━\n"
-        f"📌 <b>{title}</b>\n\n"
-        f"👤 <b>Người đăng:</b> <code>{uploader}</code>\n"
-        f"📂 <b>Định dạng:</b> <b>{media_type}</b>\n\n"
-        f"<i>💡 Bấm nút bên dưới để lưu file trực tiếp về thiết bị:</i>"
+        f"📌 <b>Pinterest Media</b>\n"
+        f"<b>{title}</b>\n"
+        f"👤 By <code>{uploader}</code> • {media_type}\n"
     )
     return msg
 
@@ -422,20 +377,16 @@ def build_spotify_stats_message(data: Dict[str, Any]) -> str:
 
     msg = (
         f"{preview_tag}"
-        f"🟢 <b>SPOTIFY MUSIC DOWNLOADER (MP3 320 KBPS)</b>\n"
-        f"━━━━━━━━━━━━━━━━━━━━\n"
-        f"🎵 <b>Bài hát:</b> <b>{title}</b>\n"
-        f"🎤 <b>Nghệ sĩ:</b> <code>{artist}</code>\n"
-        f"💎 <b>Chất lượng âm thanh:</b> <b>MP3 320 kbps High Fidelity</b>\n"
-        f"🎧 <b>Đầy đủ ID3 Tags & Album Cover Art</b>\n\n"
-        f"<i>💡 Bấm nút tải bên dưới để nhận ngay file nhạc đầy đủ:</i>"
+        f"🟢 <b>Spotify Track</b> • <b>MP3 320 kbps</b>\n"
+        f"🎵 <b>{title}</b>\n"
+        f"🎤 <code>{artist}</code> • High Fidelity Audio (ID3 Tagged)\n"
     )
     return msg
 
 def build_user_profile_stats_message(user_data: Dict[str, Any]) -> str:
     """Tạo thẻ Profile với số liệu thực tế (Real Numbers) và các cài đặt tương tác."""
     user_id = user_data.get("user_id", 0)
-    full_name = user_data.get("full_name") or "Người dùng"
+    full_name = user_data.get("full_name") or "User"
     username = user_data.get("username") or ""
     uname_str = f" (@{username})" if username else ""
     
@@ -454,31 +405,24 @@ def build_user_profile_stats_message(user_data: Dict[str, Any]) -> str:
     lang = (user_data.get("language") or "vi").upper()
     reply = (user_data.get("reply_mode") or "direct").capitalize()
     caption = (user_data.get("caption_mode") or "full").capitalize()
-    doc_mode = "✅ BẬT (Document Không nén)" if user_data.get("doc_mode") else "❌ TẮT (Video chuẩn)"
-    no_sig = "✅ BẬT (Không chữ ký)" if user_data.get("no_signature") else "❌ TẮT (Kèm link bot)"
+    doc_mode = "ON (Uncompressed)" if user_data.get("doc_mode") else "OFF (Standard Video)"
+    no_sig = "ON (Clean Caption)" if user_data.get("no_signature") else "OFF (With Bot Link)"
 
     msg = (
-        f"👑 <b>HỒ SƠ CÁ NHÂN & THỐNG KÊ THỰC TẾ (REAL STATS)</b>\n"
-        f"━━━━━━━━━━━━━━━━━━━━\n"
-        f"👤 <b>Tài khoản:</b> <b>{full_name}</b>{uname_str}\n"
-        f"🆔 <b>Telegram ID:</b> <code>{user_id}</code>\n"
-        f"💎 <b>Cấp bậc:</b> <b>PRO UNLIMITED MEMBER</b> 🚀\n\n"
-        f"📊 <b>TỔNG SỐ LIỆU ĐÃ SỬ DỤNG:</b>\n"
-        f"├ ⚡ <b>Tổng lượt tải (Downloads):</b> <code>{total_dl:,}</code>\n"
-        f"├ 🔍 <b>Tổng lượt kiểm tra (Checks):</b> <code>{total_ck:,}</code>\n"
-        f"└ 🎧 <b>Tổng nhận diện nhạc (Shazams):</b> <code>{total_sh:,}</code>\n\n"
-        f"🌐 <b>LƯỢT TẢI THEO NỀN TẢNG:</b>\n"
-        f"├ 🎵 TikTok: <code>{dl_tt:,}</code>    📸 Instagram: <code>{dl_ig:,}</code>\n"
-        f"├ 🔴 YouTube: <code>{dl_yt:,}</code>    🐦 Twitter/X: <code>{dl_tw:,}</code>\n"
-        f"└ 📌 Pinterest: <code>{dl_pin:,}</code>  🟢 Spotify: <code>{dl_sp:,}</code>\n\n"
-        f"⚙️ <b>CÀI ĐẶT HIỆN TẠI (ALL SWITCHES):</b>\n"
-        f"├ 🔀 <b>Chế độ bot:</b> {mode}\n"
-        f"├ 🌐 <b>Ngôn ngữ:</b> {lang}\n"
-        f"├ 💬 <b>Chế độ phản hồi:</b> {reply}\n"
-        f"├ 📝 <b>Định dạng Caption:</b> {caption}\n"
-        f"├ 📁 <b>Gửi file gốc Document:</b> {doc_mode}\n"
-        f"└ 🛡️ <b>Bỏ chữ ký bot:</b> {no_sig}\n\n"
-        f"<i>💡 Bấm các nút bên dưới hoặc mở Mini App để đổi cài đặt:</i>"
+        f"👤 <b>Account Profile</b> • <b>{full_name}</b>{uname_str}\n"
+        f"🆔 ID: <code>{user_id}</code> • Tier: <b>PRO Member</b> 🚀\n\n"
+        f"📊 <b>Usage Statistics</b>\n"
+        f"• Total Downloads: <code>{total_dl:,}</code>\n"
+        f"• Total Inspections: <code>{total_ck:,}</code>\n"
+        f"• Shazam Recognitions: <code>{total_sh:,}</code>\n\n"
+        f"🌐 <b>Downloads by Platform</b>\n"
+        f"• TikTok: <code>{dl_tt:,}</code> • YouTube: <code>{dl_yt:,}</code> • Instagram: <code>{dl_ig:,}</code>\n"
+        f"• Twitter: <code>{dl_tw:,}</code> • Pinterest: <code>{dl_pin:,}</code> • Spotify: <code>{dl_sp:,}</code>\n\n"
+        f"⚙️ <b>Active Preferences</b>\n"
+        f"• Mode: <b>{mode}</b> • Language: <b>{lang}</b>\n"
+        f"• Delivery: <b>{reply}</b> • Caption Format: <b>{caption}</b>\n"
+        f"• Document Mode: <b>{doc_mode}</b>\n"
+        f"• Bot Signature: <b>{no_sig}</b>\n"
     )
     return msg
 

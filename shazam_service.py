@@ -156,20 +156,16 @@ def build_shazam_card(info: Dict[str, Any]) -> Tuple[str, InlineKeyboardMarkup]:
     preview_tag = f'<a href="{cover_url}">&#8205;</a>' if cover_url else ""
 
     text = (
-        f"{preview_tag}🎧 <b>KẾT QUẢ NHẬN DIỆN BÀI HÁT (SHAZAM)</b> 🎶\n"
-        "━━━━━━━━━━━━━━━━━━━━\n"
-        f"🎵 <b>Bài hát:</b> <b>{title}</b>\n"
-        f"🎤 <b>Nghệ sĩ:</b> <code>{artist}</code>\n"
-        f"🏷️ <b>Thể loại:</b> <i>{genres}</i>\n"
-        "━━━━━━━━━━━━━━━━━━━━\n"
-        "✨ <i>Nhận diện thành công từ âm thanh / video / voice message!</i>\n"
-        "🔗 <i>Bấm các nút bên dưới để nghe ngay trên các nền tảng:</i>"
+        f"{preview_tag}"
+        f"🎧 <b>Track Identified</b> • <i>Shazam Engine</i>\n\n"
+        f"🎵 <b>{title}</b>\n"
+        f"🎤 <code>{artist}</code> • <i>{genres}</i>\n"
     )
 
     buttons = []
     row1 = []
     if spotify_url:
-        row1.append(InlineKeyboardButton("🟢 Mở trên Spotify", url=spotify_url))
+        row1.append(InlineKeyboardButton("🟢 Spotify", url=spotify_url))
     if yt_music_url:
         row1.append(InlineKeyboardButton("🔴 YouTube Music", url=yt_music_url))
     if row1:
@@ -189,7 +185,7 @@ def build_shazam_card(info: Dict[str, Any]) -> Tuple[str, InlineKeyboardMarkup]:
 
     # Nút tìm kiếm tải mp3 với short id
     buttons.append([
-        InlineKeyboardButton("⬇️ Tải MP3 320kbps bài hát này", callback_data=f"dl_sh_mp3:{s_id}")
+        InlineKeyboardButton("⬇️ Download MP3 320 kbps", callback_data=f"dl_sh_mp3:{s_id}")
     ])
 
     return text, InlineKeyboardMarkup(buttons)

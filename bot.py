@@ -132,23 +132,21 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     database.get_or_create_user(user_id, username, full_name)
 
     if is_group:
-        # Giao diện /start gọn gàng trong nhóm chat
         group_text = (
-            "🤖 <b>TIKTOK-TWEAKS BOT ĐÃ SẴN SÀNG TRONG NHÓM!</b> 🚀\n"
-            "━━━━━━━━━━━━━━━━━━━━\n"
-            "✨ <b>Hỗ trợ tải không logo & chất lượng cao:</b>\n"
-            "• TikTok (1080p, 120fps, MP3, VQScore)\n"
-            "• YouTube (Full 4K Ultra HD, 1080p, MP3 320k)\n"
-            "• Instagram (Reels, Posts)\n"
-            "• Twitter / X Video | Pinterest (Video & Ảnh HD)\n"
-            "• Spotify Music (Full Track MP3 320 kbps)\n"
-            "• 🎧 <b>Shazam:</b> Gửi tin nhắn thoại/video/clip để nhận diện bài hát!\n\n"
-            "👉 <i>Chỉ cần gửi link vào nhóm, bot sẽ tự động tải trực tiếp!</i>"
+            "<b>TikTok Tweaks Bot</b> • <i>Group Assistant</i>\n\n"
+            "✨ <b>Supported Platforms:</b>\n"
+            "• TikTok (1080p, 120 FPS, Audio Track, VQScore)\n"
+            "• YouTube (4K Ultra HD, 1080p FHD, MP3 320k)\n"
+            "• Instagram (Reels & Posts)\n"
+            "• Twitter/X & Pinterest (Full Resolution)\n"
+            "• Spotify Music (MP3 320 kbps High Fidelity)\n"
+            "• Shazam Audio Recognition (Voice & Video Notes)\n\n"
+            "👉 <i>Send any link into the group to download automatically!</i>"
         )
         keyboard = [
             [
-                InlineKeyboardButton("📱 Cài đặt cá nhân", callback_data=f"user_profile:{user_id}"),
-                InlineKeyboardButton("⚙️ Cài đặt nhóm", callback_data="group_settings_menu")
+                InlineKeyboardButton("📱 Personal Profile", callback_data=f"user_profile:{user_id}"),
+                InlineKeyboardButton("⚙️ Group Settings", callback_data="group_settings_menu")
             ]
         ]
         await update.message.reply_text(group_text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode=constants.ParseMode.HTML)
@@ -156,31 +154,27 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
 
     # Giao diện /start trong tin nhắn riêng
     welcome_text = (
-        "👑 <b>CHÀO MỪNG BẠN ĐẾN VỚI TIKTOK-TWEAKS BOT!</b> 🤖\n"
-        "━━━━━━━━━━━━━━━━━━━━\n"
-        "Trợ lý tải đa nền tảng không logo & nhận diện âm nhạc Shazam số 1 Telegram.\n\n"
-        "✨ <b>TÍNH NĂNG VỪA NÂNG CẤP:</b>\n"
-        "├ 🧲 <b>Full 4K & 120fps Support:</b> Không giới hạn tốc độ & chất lượng\n"
-        "├ 📁 <b>Document Mode:</b> Tải file gốc không nén nguyên bản\n"
-        "├ 🖼️ <b>Ảnh bìa gốc:</b> Tải preview frames full size\n"
-        "├ 🌐 <b>Đa nền tảng:</b> TikTok, YouTube, Instagram, Twitter/X, Pinterest, Spotify\n"
-        "├ 🎧 <b>Shazam Music Recognition:</b> Nhận diện bài hát từ video/voice/audio\n"
-        "├ 🎵 <b>MP3 320 kbps:</b> Tải nhạc full track chất lượng phòng thu\n"
-        "├ 📱 <b>Mini App & Profile:</b> Xem số liệu thực tế & công tắc cài đặt\n"
-        "└ 👥 <b>Group Ready:</b> Tự động tải thẳng vào nhóm, không cần quote reply\n\n"
-        "🚀 <b>Bắt đầu:</b> Hãy gửi bất kỳ link hoặc file âm thanh/video vào đây!"
+        "<b>TikTok Tweaks Bot</b> • <i>Media Downloader & Inspector</i>\n\n"
+        "⚡ <b>Core Capabilities</b>\n"
+        "• <b>Video Downloader:</b> TikTok (120 FPS), YouTube (4K), Instagram, Twitter/X, Pinterest\n"
+        "• <b>Stream Inspector:</b> Use <code>/check &lt;url&gt;</code> to analyze codecs, bitrates, and VQScore\n"
+        "• <b>Audio Studio:</b> Spotify full tracks & audio extract in MP3 320 kbps\n"
+        "• <b>Shazam Engine:</b> Send voice or video notes to identify playing music\n"
+        "• <b>Document Delivery:</b> Send uncompressed original files without Telegram compression\n\n"
+        "👉 <i>Send any media link or forward audio/video to start!</i>"
     )
     keyboard = [
         [
-            InlineKeyboardButton("📱 Profile & Mini App (/profile)", callback_data=f"user_profile:{user_id}"),
-            InlineKeyboardButton("🔀 Đổi chế độ (/mode)", callback_data="mode_menu")
+            InlineKeyboardButton("🔍 Inspector (/check)", callback_data="check_help"),
+            InlineKeyboardButton("📱 Profile & Stats", callback_data=f"user_profile:{user_id}")
         ],
         [
-            InlineKeyboardButton("⚙️ Cài đặt (/settings)", callback_data="settings_menu"),
-            InlineKeyboardButton("🎧 Shazam Nhạc (/shazam)", callback_data="shazam_info")
+            InlineKeyboardButton("🔀 Mode Switch (/mode)", callback_data="mode_menu"),
+            InlineKeyboardButton("⚙️ Settings (/settings)", callback_data="settings_menu")
         ],
         [
-            InlineKeyboardButton("📖 Hướng dẫn chi tiết (/help)", callback_data="help_menu")
+            InlineKeyboardButton("🎧 Shazam (/shazam)", callback_data="shazam_info"),
+            InlineKeyboardButton("📖 Guide (/help)", callback_data="help_menu")
         ]
     ]
     await update.message.reply_text(
@@ -192,25 +186,24 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Lệnh /help: Hướng dẫn sử dụng chi tiết tất cả nền tảng."""
     help_text = (
-        "📖 <b>HƯỚNG DẪN SỬ DỤNG TIKTOK-TWEAKS BOT</b>\n"
-        "━━━━━━━━━━━━━━━━━━━━\n"
-        "1️⃣ <b>TẢI VIDEO & MEDIA:</b>\n"
-        "• <b>TikTok:</b> Gửi link video hoặc link âm thanh (/music/). Hỗ trợ 1080p, 120fps, VQScore.\n"
-        "• <b>YouTube:</b> Gửi link video hoặc Shorts. Hỗ trợ chọn độ phân giải 4K, 1080p, 720p, MP3 320k.\n"
-        "• <b>Instagram:</b> Gửi link Reels hoặc bài viết để tải không logo.\n"
-        "• <b>Twitter / X:</b> Tải video từ tweet chất lượng cao nhất.\n"
-        "• <b>Pinterest:</b> Tải video pin hoặc ảnh gốc full size.\n"
-        "• <b>Spotify:</b> Gửi link bài hát để tải full track MP3 320 kbps.\n\n"
-        "2️⃣ <b>NHẬN DIỆN BÀI HÁT (SHAZAM):</b>\n"
-        "• Gửi hoặc chuyển tiếp (Forward) bất kỳ tin nhắn thoại (Voice), video tròn (Video note), video clip hoặc file audio.\n"
-        "• Bot sẽ nghe đoạn âm thanh và gửi lại tên bài hát, nghệ sĩ, ảnh bìa kèm link Spotify/Apple Music!\n\n"
-        "3️⃣ <b>GỬI FILE GỐC (DOCUMENT MODE):</b>\n"
-        "• Bấm nút <code>📁 Tải File Gốc (Document)</code> hoặc bật Document Mode trong /settings để nhận file không bị Telegram nén.\n\n"
-        "4️⃣ <b>SỬ DỤNG TRONG NHÓM:</b>\n"
-        "• Thêm bot vào nhóm, bot sẽ tự động tải video khi có thành viên gửi link.\n"
-        "• Quản trị viên gõ /group_settings để quản lý."
+        "📖 <b>Command & Feature Guide</b>\n\n"
+        "<b>Commands</b>\n"
+        "• <code>/check &lt;url or @user&gt;</code> — Inspect video stream specs, VQScore, or creator analytics\n"
+        "• <code>/mode</code> — Switch between Hybrid (interactive menu), Downloader (instant), and Checker\n"
+        "• <code>/profile</code> — View real usage statistics and open Telegram Mini App\n"
+        "• <code>/settings</code> — Configure Document mode, caption formats, and language\n"
+        "• <code>/shazam</code> — Audio recognition instructions\n"
+        "• <code>/group_settings</code> — Manage auto-download and silent mode in group chats\n\n"
+        "<b>Downloader & Inspector</b>\n"
+        "• <b>TikTok:</b> Original H.265/AVC stream, 120 FPS, audio track, VQScore rating\n"
+        "• <b>YouTube:</b> 4K Ultra HD, 1080p FHD, 720p, or standalone MP3 320 kbps\n"
+        "• <b>Instagram:</b> Clean Reels, Posts, and Stories without watermark\n"
+        "• <b>Twitter/X & Pinterest:</b> Highest resolution video and HD images\n"
+        "• <b>Spotify:</b> Studio-quality MP3 320 kbps with metadata & cover art\n\n"
+        "<b>Music Recognition (Shazam)</b>\n"
+        "Forward or send any voice message, circular video note, or video clip directly to the chat."
     )
-    keyboard = [[InlineKeyboardButton("⬅️ Quay lại", callback_data="back_to_start")]]
+    keyboard = [[InlineKeyboardButton("⬅️ Back", callback_data="back_to_start")]]
     if update.message:
         await update.message.reply_text(help_text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode=constants.ParseMode.HTML)
 
@@ -221,21 +214,18 @@ async def mode_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     current_mode = user_data.get("mode", config.DEFAULT_MODE)
 
     mode_text = (
-        "🔀 <b>CHỌN CHẾ ĐỘ HOẠT ĐỘNG (THREE FLEXIBLE MODES)</b>\n"
-        "━━━━━━━━━━━━━━━━━━━━\n"
-        f"Chế độ hiện tại của bạn: <b>{current_mode.upper()}</b>\n\n"
-        "1️⃣ 🔄 <b>Hybrid (Menu tương tác):</b>\n"
-        "Hiển thị card thông tin kèm các nút bấm tải Original, 4K, MP3, Checker, Profile.\n\n"
-        "2️⃣ ⚡ <b>Downloader (Tải siêu tốc):</b>\n"
-        "Tự động tải và gửi ngay file chất lượng cao nhất không cần bấm nút.\n\n"
-        "3️⃣ 🔍 <b>Checker (Phân tích chuyên sâu):</b>\n"
-        "Gửi ngay bản phân tích VQScore, codec, từ khóa và kiểm tra thống kê."
+        "🔀 <b>Bot Operation Mode</b>\n\n"
+        f"Active Mode: <b>{current_mode.upper()}</b>\n\n"
+        "• <b>Hybrid (Default):</b> Interactive card with instant download & analytics buttons.\n"
+        "• <b>Downloader:</b> Instant download in highest quality without buttons.\n"
+        "• <b>Checker:</b> Detailed stream analytics, VQScore, and creator statistics.\n\n"
+        "<i>Tip: You can always use <code>/check &lt;url&gt;</code> to inspect any media regardless of active mode.</i>"
     )
     keyboard = [
         [InlineKeyboardButton(f"{'✅ ' if current_mode == 'hybrid' else ''}🔄 Hybrid", callback_data="set_mode:hybrid")],
         [InlineKeyboardButton(f"{'✅ ' if current_mode == 'downloader' else ''}⚡ Downloader", callback_data="set_mode:downloader")],
         [InlineKeyboardButton(f"{'✅ ' if current_mode == 'checker' else ''}🔍 Checker", callback_data="set_mode:checker")],
-        [InlineKeyboardButton("⬅️ Quay lại", callback_data="back_to_start")]
+        [InlineKeyboardButton("⬅️ Back", callback_data="back_to_start")]
     ]
     if update.message:
         await update.message.reply_text(mode_text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode=constants.ParseMode.HTML)
@@ -359,17 +349,175 @@ async def group_settings_command(update: Update, context: ContextTypes.DEFAULT_T
 async def shazam_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Lệnh /shazam: Hướng dẫn nhận diện nhạc."""
     text = (
-        "🎧 <b>HƯỚNG DẪN NHẬN DIỆN NHẠC (SHAZAM RECOGNITION)</b>\n"
-        "━━━━━━━━━━━━━━━━━━━━\n"
-        "Bạn có thể nhận diện bài hát từ bất kỳ nguồn âm thanh nào:\n\n"
-        "1. 🎤 <b>Ghi âm tin nhắn thoại (Voice message):</b> Bật mic nói hoặc thu đoạn nhạc rồi gửi vào bot.\n"
-        "2. 📹 <b>Video tròn (Video note) hoặc Video clip:</b> Gửi hoặc chuyển tiếp video chứa bài hát.\n"
-        "3. 🎵 <b>File âm thanh (Audio / MP3):</b> Gửi file nhạc hoặc đoạn beat.\n"
-        "4. 🎬 <b>Nút Shazam trên video:</b> Bấm '🎧 Nhận diện nhạc' ngay trên bảng thông tin video.\n\n"
-        "✨ <i>Bot sẽ trích xuất âm thanh và xác định chính xác tên bài hát, ca sĩ kèm link Spotify / YouTube Music!</i>"
+        "🎧 <b>Shazam Music Recognition</b>\n\n"
+        "Identify music from any audio or video source:\n\n"
+        "1. 🎤 <b>Voice Message:</b> Record audio or hum a melody and send it.\n"
+        "2. 📹 <b>Video Note / Video Clip:</b> Forward or upload any video containing music.\n"
+        "3. 🎵 <b>Audio File:</b> Send an MP3, AAC, or voice clip.\n"
+        "4. 🎬 <b>Interactive Button:</b> Click '🎧 Shazam' on any video inspector card.\n\n"
+        "<i>Includes direct links to Spotify, Apple Music, YouTube Music, and 320 kbps MP3 download!</i>"
     )
     if update.message:
         await update.message.reply_text(text, parse_mode=constants.ParseMode.HTML)
+
+async def check_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Lệnh /check [url/@username]: Phân tích chuyên sâu thông số video, codec, bitrate, VQScore, tài khoản."""
+    if not update.effective_chat or not update.message:
+        return
+
+    chat_id = update.effective_chat.id
+    user_id = update.effective_user.id if update.effective_user else 0
+
+    target_text = ""
+    if context.args:
+        target_text = " ".join(context.args).strip()
+    elif update.message.reply_to_message:
+        reply_msg = update.message.reply_to_message
+        target_text = (reply_msg.text or reply_msg.caption or "").strip()
+
+    if not target_text:
+        help_msg = (
+            "🔍 <b>Video & Creator Inspector</b>\n\n"
+            "Analyze video streams, MP4 headers, real codecs, bitrates, and creator metrics.\n\n"
+            "<b>Usage:</b>\n"
+            "• <code>/check &lt;TikTok/YouTube/IG Link&gt;</code>\n"
+            "• <code>/check @username</code> (Analyze creator's last 12 videos)\n"
+            "• Reply to any message containing a link with <code>/check</code>\n\n"
+            "<b>Supported Platforms:</b>\n"
+            "• <b>TikTok:</b> Full VQScore, 120 FPS, H.265/H.264 streams, exact counts\n"
+            "• <b>TikTok Accounts:</b> 12-video performance analytics & engagement rate\n"
+            "• <b>YouTube:</b> 4K check, stream formats, duration, views\n"
+            "• <b>Instagram:</b> Reels resolution, audio, interaction stats"
+        )
+        await update.message.reply_text(help_msg, parse_mode=constants.ParseMode.HTML)
+        return
+
+    # 1. Kiểm tra nếu là TikTok username (ví dụ: @mihchiet01 hoặc mihchiet01 hoặc link profile tiktok.com/@username)
+    username_match = re.search(r'(?:https?://(?:www\.)?tiktok\.com/)?@([a-zA-Z0-9_.-]{3,30})', target_text)
+    is_pure_user = target_text.startswith("@") or ("/video/" not in target_text and "/t/" not in target_text and "/@" in target_text)
+
+    # Phân loại link media
+    media_url, platform = classify_media_url(target_text)
+
+    # Nếu không phải link video nhưng là username hoặc link profile
+    if not media_url and (is_pure_user or (username_match and not target_text.startswith("http"))):
+        uname = (username_match.group(1) if username_match else target_text.lstrip("@")).strip()
+        status_msg = await update.message.reply_text(
+            f"⏳ <b>Analyzing @{uname}'s profile & last 12 videos...</b>",
+            parse_mode=constants.ParseMode.HTML
+        )
+        videos, err = await fetch_author_recent_12_videos(uname, max_videos=12)
+        if not videos:
+            await status_msg.edit_text(f"❌ Could not retrieve profile for @{uname}: {err or 'Account might be private or restricted.'}")
+            return
+        database.record_check(user_id)
+        profile_msg = build_profile_analytics_message(uname, f"@{uname}", videos)
+        await status_msg.edit_text(profile_msg, parse_mode=constants.ParseMode.HTML)
+        return
+
+    if not media_url or not platform:
+        await update.message.reply_text(
+            "❌ <b>Link không hợp lệ.</b>\nVui lòng cung cấp link video TikTok, YouTube, Instagram hoặc username TikTok (@user).",
+            parse_mode=constants.ParseMode.HTML
+        )
+        return
+
+    # 2. Check TikTok Video
+    if platform in ("tiktok_video", "tiktok_music"):
+        status_msg = await update.message.reply_text(
+            "⏳ <b>Inspecting TikTok stream, decoding MP4 header & VQScore...</b>",
+            parse_mode=constants.ParseMode.HTML
+        )
+        success, data, err_msg = await fetch_tiktok_video(media_url)
+        if not success or not data:
+            await status_msg.edit_text(f"❌ {err_msg or 'Failed to inspect TikTok video.'}")
+            return
+
+        video_id = str(data.get("id") or uuid.uuid4().hex[:8])
+        data["_source_url"] = media_url
+        MEDIA_CACHE[video_id] = {"data": data, "time": asyncio.get_event_loop().time(), "type": "tiktok"}
+        database.record_check(user_id)
+
+        meta = data.get("_meta") or {}
+        app_size_mb = meta.get("app_size_mb", 0)
+        browser_size_mb = meta.get("browser_size_mb", 0)
+
+        tt_msg = build_video_stats_message(data)
+        buttons = [
+            [
+                InlineKeyboardButton(f"📥 Original ({app_size_mb:.1f}MB)", callback_data=f"dl_tt:original:{video_id}"),
+                InlineKeyboardButton(f"⚡ Standard ({browser_size_mb:.1f}MB)", callback_data=f"dl_tt:standard:{video_id}")
+            ],
+            [
+                InlineKeyboardButton("📁 Document (Original)", callback_data=f"dl_tt_doc:{video_id}"),
+                InlineKeyboardButton("🎵 Audio Track", callback_data=f"dl_tt_audio:{video_id}")
+            ],
+            [
+                InlineKeyboardButton("📊 Author Profile", callback_data=f"profile:{data.get('author', {}).get('unique_id', '')}"),
+                InlineKeyboardButton("🔮 Related Videos", callback_data=f"similar:{video_id}")
+            ],
+            [
+                InlineKeyboardButton("🎧 Shazam", callback_data=f"shazam_tt:{video_id}"),
+                InlineKeyboardButton("🖼️ HD Cover", callback_data=f"dl_cover:{video_id}"),
+                InlineKeyboardButton("🔄 Recheck", callback_data=f"recheck:{video_id}")
+            ]
+        ]
+        await status_msg.edit_text(tt_msg, reply_markup=InlineKeyboardMarkup(buttons), parse_mode=constants.ParseMode.HTML)
+        return
+
+    # 3. Check YouTube
+    if platform == "youtube":
+        status_msg = await update.message.reply_text("⏳ <b>Inspecting YouTube stream specs...</b>", parse_mode=constants.ParseMode.HTML)
+        ok, yt_data, err = await fetch_youtube_media(media_url)
+        if not ok or not yt_data:
+            await status_msg.edit_text(f"❌ {err or 'Failed to inspect YouTube media.'}")
+            return
+        yt_id = uuid.uuid4().hex[:8]
+        MEDIA_CACHE[yt_id] = {"data": yt_data, "time": asyncio.get_event_loop().time(), "type": "youtube"}
+        database.record_check(user_id)
+
+        yt_msg = build_youtube_stats_message(yt_data)
+        buttons = []
+        fmt_row = []
+        for f in yt_data.get("formats", []):
+            label = f"{f['res']}"
+            fmt_row.append(InlineKeyboardButton(label, callback_data=f"dl_yt:{yt_id}:{f['format_id']}:{f['res']}"))
+            if len(fmt_row) == 2:
+                buttons.append(fmt_row)
+                fmt_row = []
+        if fmt_row:
+            buttons.append(fmt_row)
+        buttons.append([
+            InlineKeyboardButton("🎵 MP3 320 kbps", callback_data=f"dl_yt_audio:{yt_id}"),
+            InlineKeyboardButton("🖼️ HD Cover", callback_data=f"dl_cover:{yt_id}")
+        ])
+        await status_msg.edit_text(yt_msg, reply_markup=InlineKeyboardMarkup(buttons), parse_mode=constants.ParseMode.HTML)
+        return
+
+    # 4. Check Instagram
+    if platform == "instagram":
+        status_msg = await update.message.reply_text("⏳ <b>Inspecting Instagram media...</b>", parse_mode=constants.ParseMode.HTML)
+        ok, ig_data, err = await fetch_instagram_media(media_url)
+        if not ok or not ig_data:
+            await status_msg.edit_text(f"❌ {err or 'Failed to inspect Instagram media.'}")
+            return
+        ig_id = uuid.uuid4().hex[:8]
+        MEDIA_CACHE[ig_id] = {"data": ig_data, "time": asyncio.get_event_loop().time(), "type": "instagram"}
+        database.record_check(user_id)
+
+        ig_msg = build_instagram_stats_message(ig_data)
+        buttons = [
+            [InlineKeyboardButton("📥 Download (Original)", callback_data=f"dl_ig:{ig_id}")],
+            [
+                InlineKeyboardButton("🎧 Shazam", callback_data=f"shazam_ig:{ig_id}"),
+                InlineKeyboardButton("🖼️ HD Cover", callback_data=f"dl_cover:{ig_id}")
+            ]
+        ]
+        await status_msg.edit_text(ig_msg, reply_markup=InlineKeyboardMarkup(buttons), parse_mode=constants.ParseMode.HTML)
+        return
+
+    # Default fallback
+    await handle_message(update, context)
 
 # ==============================================================
 # Group Chat Join Event Handler
@@ -957,26 +1105,22 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     tt_msg = build_video_stats_message(data)
     buttons = [
         [
-            InlineKeyboardButton(f"✨ Original ({app_size_mb:.1f}MB)", callback_data=f"dl_tt:original:{video_id}"),
-            InlineKeyboardButton(f"🎬 Standard ({browser_size_mb:.1f}MB)", callback_data=f"dl_tt:standard:{video_id}")
+            InlineKeyboardButton(f"📥 Original ({app_size_mb:.1f}MB)", callback_data=f"dl_tt:original:{video_id}"),
+            InlineKeyboardButton(f"⚡ Standard ({browser_size_mb:.1f}MB)", callback_data=f"dl_tt:standard:{video_id}")
         ],
         [
-            InlineKeyboardButton("📁 Tải File Gốc (Document)", callback_data=f"dl_tt_doc:{video_id}"),
-            InlineKeyboardButton("🎵 Tải Nhạc MP3", callback_data=f"dl_tt_audio:{video_id}")
+            InlineKeyboardButton("📁 Document (Original)", callback_data=f"dl_tt_doc:{video_id}"),
+            InlineKeyboardButton("🎵 Audio Track", callback_data=f"dl_tt_audio:{video_id}")
         ],
         [
-            InlineKeyboardButton("🎧 Nhận diện nhạc (Shazam)", callback_data=f"shazam_tt:{video_id}"),
-            InlineKeyboardButton("🖼️ Ảnh Bìa Gốc", callback_data=f"dl_cover:{video_id}")
+            InlineKeyboardButton("📊 Author Profile", callback_data=f"profile:{data.get('author', {}).get('unique_id', '')}"),
+            InlineKeyboardButton("🔮 Related Videos", callback_data=f"similar:{video_id}")
         ],
         [
-            InlineKeyboardButton("📈 Profile 12 Video", callback_data=f"profile:{data.get('author', {}).get('unique_id', '')}"),
-            InlineKeyboardButton("🔮 Video tương tự", callback_data=f"similar:{video_id}")
-        ],
-        [
-            InlineKeyboardButton("🔄 Quét lại (Recheck)", callback_data=f"recheck:{video_id}"),
-            InlineKeyboardButton("👤 Thông tin tác giả", callback_data=f"user_info:{video_id}")
-        ],
-        [InlineKeyboardButton("❌ Đóng", callback_data=f"close:{video_id}")]
+            InlineKeyboardButton("🎧 Shazam", callback_data=f"shazam_tt:{video_id}"),
+            InlineKeyboardButton("🖼️ HD Cover", callback_data=f"dl_cover:{video_id}"),
+            InlineKeyboardButton("🔄 Recheck", callback_data=f"recheck:{video_id}")
+        ]
     ]
     await status_msg.edit_text(tt_msg, reply_markup=InlineKeyboardMarkup(buttons), parse_mode=constants.ParseMode.HTML)
 
@@ -1019,6 +1163,22 @@ async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TY
         return
     if data_str == "shazam_info":
         await shazam_command(update, context)
+        return
+    if data_str == "check_help":
+        help_msg = (
+            "🔍 <b>Video & Creator Inspector</b>\n\n"
+            "Analyze video streams, MP4 headers, real codecs, bitrates, and creator metrics.\n\n"
+            "<b>Usage:</b>\n"
+            "• <code>/check &lt;TikTok/YouTube/IG Link&gt;</code>\n"
+            "• <code>/check @username</code> (Analyze creator's last 12 videos)\n"
+            "• Reply to any message containing a link with <code>/check</code>\n\n"
+            "<b>Supported Platforms:</b>\n"
+            "• <b>TikTok:</b> Full VQScore, 120 FPS, H.265/H.264 streams, exact counts\n"
+            "• <b>TikTok Accounts:</b> 12-video performance analytics & engagement rate\n"
+            "• <b>YouTube:</b> 4K check, stream formats, duration, views\n"
+            "• <b>Instagram:</b> Reels resolution, audio, interaction stats"
+        )
+        await query.message.reply_text(help_msg, parse_mode=constants.ParseMode.HTML)
         return
     if data_str == "group_settings_menu":
         await group_settings_command(update, context)
@@ -1685,6 +1845,7 @@ def main() -> None:
     # Đăng ký các lệnh
     app.add_handler(CommandHandler("start", start_command))
     app.add_handler(CommandHandler("help", help_command))
+    app.add_handler(CommandHandler(["check", "inspect", "analyze"], check_command))
     app.add_handler(CommandHandler("mode", mode_command))
     app.add_handler(CommandHandler("settings", settings_command))
     app.add_handler(CommandHandler(["profile", "webapp", "app"], profile_command))
