@@ -133,20 +133,14 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
 
     if is_group:
         group_text = (
-            "<b>TikTok Tweaks Bot</b> • <i>Group Assistant</i>\n\n"
-            "✨ <b>Supported Platforms:</b>\n"
-            "• TikTok (1080p, 120 FPS, Audio Track, VQScore)\n"
-            "• YouTube (4K Ultra HD, 1080p FHD, MP3 320k)\n"
-            "• Instagram (Reels & Posts)\n"
-            "• Twitter/X & Pinterest (Full Resolution)\n"
-            "• Spotify Music (MP3 320 kbps High Fidelity)\n"
-            "• Shazam Audio Recognition (Voice & Video Notes)\n\n"
-            "👉 <i>Send any link into the group to download automatically!</i>"
+            "👑 <b>TikTok Tweaks Bot</b> • <i>Group Assistant</i>\n"
+            "Tải video TikTok 120fps, YouTube 4K, IG, X, Pinterest & Spotify 320k.\n"
+            "👉 <i>Gửi link trực tiếp vào nhóm để tải tự động!</i>"
         )
         keyboard = [
             [
-                InlineKeyboardButton("📱 Personal Profile", callback_data=f"user_profile:{user_id}"),
-                InlineKeyboardButton("⚙️ Group Settings", callback_data="group_settings_menu")
+                InlineKeyboardButton("📱 Profile", callback_data=f"user_profile:{user_id}"),
+                InlineKeyboardButton("⚙️ Cài đặt nhóm", callback_data="group_settings_menu")
             ]
         ]
         await update.message.reply_text(group_text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode=constants.ParseMode.HTML)
@@ -154,27 +148,20 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
 
     # Giao diện /start trong tin nhắn riêng
     welcome_text = (
-        "<b>TikTok Tweaks Bot</b> • <i>Media Downloader & Inspector</i>\n\n"
-        "⚡ <b>Core Capabilities</b>\n"
-        "• <b>Video Downloader:</b> TikTok (120 FPS), YouTube (4K), Instagram, Twitter/X, Pinterest\n"
-        "• <b>Stream Inspector:</b> Use <code>/check &lt;url&gt;</code> to analyze codecs, bitrates, and VQScore\n"
-        "• <b>Audio Studio:</b> Spotify full tracks & audio extract in MP3 320 kbps\n"
-        "• <b>Shazam Engine:</b> Send voice or video notes to identify playing music\n"
-        "• <b>Document Delivery:</b> Send uncompressed original files without Telegram compression\n\n"
-        "👉 <i>Send any media link or forward audio/video to start!</i>"
+        "👑 <b>TikTok Tweaks Bot</b>\n"
+        "Tải video gốc TikTok (120fps, HEVC), YouTube 4K, IG, X, Pinterest & Spotify 320k.\n\n"
+        "💡 <i>Gửi link trực tiếp để tải, hoặc dùng <code>/check &lt;link&gt;</code> để kiểm tra.</i>"
     )
     keyboard = [
         [
-            InlineKeyboardButton("🔍 Inspector (/check)", callback_data="check_help"),
-            InlineKeyboardButton("📱 Profile & Stats", callback_data=f"user_profile:{user_id}")
+            InlineKeyboardButton("🔍 Check", callback_data="check_help"),
+            InlineKeyboardButton("🔀 Chế độ", callback_data="mode_menu"),
+            InlineKeyboardButton("📱 Profile", callback_data=f"user_profile:{user_id}")
         ],
         [
-            InlineKeyboardButton("🔀 Mode Switch (/mode)", callback_data="mode_menu"),
-            InlineKeyboardButton("⚙️ Settings (/settings)", callback_data="settings_menu")
-        ],
-        [
-            InlineKeyboardButton("🎧 Shazam (/shazam)", callback_data="shazam_info"),
-            InlineKeyboardButton("📖 Guide (/help)", callback_data="help_menu")
+            InlineKeyboardButton("⚙️ Cài đặt", callback_data="settings_menu"),
+            InlineKeyboardButton("🎧 Shazam", callback_data="shazam_info"),
+            InlineKeyboardButton("📖 Hướng dẫn", callback_data="help_menu")
         ]
     ]
     await update.message.reply_text(
@@ -214,18 +201,18 @@ async def mode_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     current_mode = user_data.get("mode", config.DEFAULT_MODE)
 
     mode_text = (
-        "🔀 <b>Bot Operation Mode</b>\n\n"
-        f"Active Mode: <b>{current_mode.upper()}</b>\n\n"
-        "• <b>Hybrid (Default):</b> Interactive card with instant download & analytics buttons.\n"
-        "• <b>Downloader:</b> Instant download in highest quality without buttons.\n"
-        "• <b>Checker:</b> Detailed stream analytics, VQScore, and creator statistics.\n\n"
-        "<i>Tip: You can always use <code>/check &lt;url&gt;</code> to inspect any media regardless of active mode.</i>"
+        f"🔀 <b>Chế độ hoạt động:</b> <b>{current_mode.upper()}</b>\n\n"
+        "• <b>Hybrid:</b> Bảng điều khiển tải & kiểm tra thông số.\n"
+        "• <b>Downloader:</b> Tải ngay chất lượng gốc không cần bấm nút.\n"
+        "• <b>Checker:</b> Phân tích chuyên sâu codec, bitrate, VQScore."
     )
     keyboard = [
-        [InlineKeyboardButton(f"{'✅ ' if current_mode == 'hybrid' else ''}🔄 Hybrid", callback_data="set_mode:hybrid")],
-        [InlineKeyboardButton(f"{'✅ ' if current_mode == 'downloader' else ''}⚡ Downloader", callback_data="set_mode:downloader")],
-        [InlineKeyboardButton(f"{'✅ ' if current_mode == 'checker' else ''}🔍 Checker", callback_data="set_mode:checker")],
-        [InlineKeyboardButton("⬅️ Back", callback_data="back_to_start")]
+        [
+            InlineKeyboardButton(f"{'✅ ' if current_mode == 'hybrid' else ''}🔄 Hybrid", callback_data="set_mode:hybrid"),
+            InlineKeyboardButton(f"{'✅ ' if current_mode == 'downloader' else ''}⚡ Tải ngay", callback_data="set_mode:downloader"),
+            InlineKeyboardButton(f"{'✅ ' if current_mode == 'checker' else ''}🔍 Checker", callback_data="set_mode:checker")
+        ],
+        [InlineKeyboardButton("⬅️ Quay lại", callback_data="back_to_start")]
     ]
     if update.message:
         await update.message.reply_text(mode_text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode=constants.ParseMode.HTML)
@@ -235,35 +222,27 @@ async def settings_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     user_id = update.effective_user.id if update.effective_user else 0
     user_data = database.get_or_create_user(user_id)
     quality = user_data.get("quality", "original").upper()
-    doc_mode = "✅ BẬT" if user_data.get("doc_mode") else "❌ TẮT"
-    no_sig = "✅ BẬT" if user_data.get("no_signature") else "❌ TẮT"
+    doc_mode = "BẬT" if user_data.get("doc_mode") else "TẮT"
+    no_sig = "BẬT" if user_data.get("no_signature") else "TẮT"
     reply_mode = (user_data.get("reply_mode") or "direct").capitalize()
     caption_mode = (user_data.get("caption_mode") or "full").capitalize()
 
     settings_text = (
-        "⚙️ <b>CÀI ĐẶT CÁ NHÂN (PERSONAL SETTINGS)</b>\n"
-        "━━━━━━━━━━━━━━━━━━━━\n"
-        f"• Chất lượng mặc định: <b>{quality}</b>\n"
-        f"• Gửi file gốc (Document): <b>{doc_mode}</b>\n"
-        f"• Chế độ phản hồi: <b>{reply_mode}</b>\n"
-        f"• Định dạng Caption: <b>{caption_mode}</b>\n"
-        f"• Bỏ chữ ký bot: <b>{no_sig}</b>\n\n"
-        "<i>Bấm các nút bên dưới để chuyển đổi ngay lập tức:</i>"
+        f"⚙️ <b>Cài đặt cá nhân</b>\n"
+        f"• File gốc: <b>{doc_mode}</b> • Không chữ ký: <b>{no_sig}</b>\n"
+        f"• Phản hồi: <b>{reply_mode}</b> • Caption: <b>{caption_mode}</b>"
     )
     keyboard = [
         [
-            InlineKeyboardButton(f"📁 Document Mode: {doc_mode}", callback_data="toggle_opt:doc_mode"),
-            InlineKeyboardButton(f"🛡️ No Signature: {no_sig}", callback_data="toggle_opt:no_signature")
+            InlineKeyboardButton(f"📁 Doc: {doc_mode}", callback_data="toggle_opt:doc_mode"),
+            InlineKeyboardButton(f"🛡️ No-Sig: {no_sig}", callback_data="toggle_opt:no_signature"),
+            InlineKeyboardButton(f"💬 Gửi: {reply_mode}", callback_data="cycle_opt:reply_mode")
         ],
         [
-            InlineKeyboardButton(f"💬 Reply: {reply_mode}", callback_data="cycle_opt:reply_mode"),
-            InlineKeyboardButton(f"📝 Caption: {caption_mode}", callback_data="cycle_opt:caption_mode")
-        ],
-        [
-            InlineKeyboardButton("🔀 Đổi chế độ (/mode)", callback_data="mode_menu"),
-            InlineKeyboardButton("📱 Mở Profile & Mini App", callback_data=f"user_profile:{user_id}")
-        ],
-        [InlineKeyboardButton("⬅️ Quay lại", callback_data="back_to_start")]
+            InlineKeyboardButton(f"📝 Chữ: {caption_mode}", callback_data="cycle_opt:caption_mode"),
+            InlineKeyboardButton("🔀 Chế độ", callback_data="mode_menu"),
+            InlineKeyboardButton("📱 Profile", callback_data=f"user_profile:{user_id}")
+        ]
     ]
     if update.message:
         await update.message.reply_text(settings_text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode=constants.ParseMode.HTML)
@@ -301,20 +280,17 @@ async def profile_command(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         )
         buttons.append([InlineKeyboardButton("📱 Mở Mini App (Full Screen)", web_app=WebAppInfo(url=webapp_link))])
 
-    # Nút chuyển đổi tương tác trực tiếp trong Telegram
+    # Nút chuyển đổi tương tác trực tiếp trong Telegram (2 hàng gọn gàng)
     buttons.append([
-        InlineKeyboardButton(f"📁 Document: {'BẬT' if user_data.get('doc_mode') else 'TẮT'}", callback_data="toggle_opt:doc_mode"),
-        InlineKeyboardButton(f"🛡️ No Sig: {'BẬT' if user_data.get('no_signature') else 'TẮT'}", callback_data="toggle_opt:no_signature")
+        InlineKeyboardButton(f"📁 Doc: {'BẬT' if user_data.get('doc_mode') else 'TẮT'}", callback_data="toggle_opt:doc_mode"),
+        InlineKeyboardButton(f"🛡️ No-Sig: {'BẬT' if user_data.get('no_signature') else 'TẮT'}", callback_data="toggle_opt:no_signature"),
+        InlineKeyboardButton(f"💬 Gửi: {(user_data.get('reply_mode') or 'direct').capitalize()}", callback_data="cycle_opt:reply_mode")
     ])
     buttons.append([
-        InlineKeyboardButton(f"💬 Gửi: {(user_data.get('reply_mode') or 'direct').capitalize()}", callback_data="cycle_opt:reply_mode"),
-        InlineKeyboardButton(f"📝 Chữ: {(user_data.get('caption_mode') or 'full').capitalize()}", callback_data="cycle_opt:caption_mode")
+        InlineKeyboardButton(f"📝 Chữ: {(user_data.get('caption_mode') or 'full').capitalize()}", callback_data="cycle_opt:caption_mode"),
+        InlineKeyboardButton("🔄 Làm mới", callback_data=f"user_profile:{user_id}"),
+        InlineKeyboardButton("❌ Đóng", callback_data="close_box")
     ])
-    buttons.append([
-        InlineKeyboardButton(f"🌐 Ngôn ngữ: {(user_data.get('language') or 'vi').upper()}", callback_data="cycle_opt:language"),
-        InlineKeyboardButton("🔄 Cập nhật số liệu", callback_data=f"user_profile:{user_id}")
-    ])
-    buttons.append([InlineKeyboardButton("❌ Đóng", callback_data="close_box")])
 
     if update.message:
         await update.message.reply_text(profile_msg, reply_markup=InlineKeyboardMarkup(buttons), parse_mode=constants.ParseMode.HTML)
@@ -332,15 +308,14 @@ async def group_settings_command(update: Update, context: ContextTypes.DEFAULT_T
     silent = "✅ BẬT" if group_data.get("silent_mode") else "❌ TẮT"
 
     msg = (
-        f"👥 <b>CÀI ĐẶT NHÓM: {chat.title}</b>\n"
-        f"━━━━━━━━━━━━━━━━━━━━\n"
-        f"• Tự động tải khi gửi link: <b>{auto_dl}</b>\n"
-        f"• Chế độ gửi im lặng (Silent): <b>{silent}</b>\n\n"
-        f"<i>Quản trị viên có thể bấm các nút bên dưới để đổi thiết lập nhóm:</i>"
+        f"👥 <b>Cài đặt nhóm: {chat.title}</b>\n"
+        f"• Tự động tải: <b>{auto_dl}</b> • Gửi im lặng: <b>{silent}</b>"
     )
     keyboard = [
-        [InlineKeyboardButton(f"⚡ Tự động tải: {auto_dl}", callback_data=f"toggle_grp:auto_download:{chat.id}")],
-        [InlineKeyboardButton(f"🔕 Gửi im lặng: {silent}", callback_data=f"toggle_grp:silent_mode:{chat.id}")],
+        [
+            InlineKeyboardButton(f"⚡ Tự động tải: {auto_dl}", callback_data=f"toggle_grp:auto_download:{chat.id}"),
+            InlineKeyboardButton(f"🔕 Gửi im lặng: {silent}", callback_data=f"toggle_grp:silent_mode:{chat.id}")
+        ],
         [InlineKeyboardButton("❌ Đóng", callback_data="close_box")]
     ]
     if update.message:
@@ -445,21 +420,15 @@ async def check_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         tt_msg = build_video_stats_message(data)
         buttons = [
             [
-                InlineKeyboardButton(f"📥 Original ({app_size_mb:.1f}MB)", callback_data=f"dl_tt:original:{video_id}"),
-                InlineKeyboardButton(f"⚡ Standard ({browser_size_mb:.1f}MB)", callback_data=f"dl_tt:standard:{video_id}")
+                InlineKeyboardButton(f"📥 Gốc ({app_size_mb:.1f}M)", callback_data=f"dl_tt:original:{video_id}"),
+                InlineKeyboardButton(f"⚡ Web ({browser_size_mb:.1f}M)", callback_data=f"dl_tt:standard:{video_id}"),
+                InlineKeyboardButton("🎵 Nhạc", callback_data=f"dl_tt_audio:{video_id}")
             ],
             [
-                InlineKeyboardButton("📁 Document (Original)", callback_data=f"dl_tt_doc:{video_id}"),
-                InlineKeyboardButton("🎵 Audio Track", callback_data=f"dl_tt_audio:{video_id}")
-            ],
-            [
-                InlineKeyboardButton("📊 Author Profile", callback_data=f"profile:{data.get('author', {}).get('unique_id', '')}"),
-                InlineKeyboardButton("🔮 Related Videos", callback_data=f"similar:{video_id}")
-            ],
-            [
+                InlineKeyboardButton("📁 Doc", callback_data=f"dl_tt_doc:{video_id}"),
+                InlineKeyboardButton("🖼️ Cover", callback_data=f"dl_cover:{video_id}"),
                 InlineKeyboardButton("🎧 Shazam", callback_data=f"shazam_tt:{video_id}"),
-                InlineKeyboardButton("🖼️ HD Cover", callback_data=f"dl_cover:{video_id}"),
-                InlineKeyboardButton("🔄 Recheck", callback_data=f"recheck:{video_id}")
+                InlineKeyboardButton("📊 Kênh", callback_data=f"profile:{data.get('author', {}).get('unique_id', '')}")
             ]
         ]
         await status_msg.edit_text(tt_msg, reply_markup=InlineKeyboardMarkup(buttons), parse_mode=constants.ParseMode.HTML)
@@ -479,17 +448,14 @@ async def check_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         yt_msg = build_youtube_stats_message(yt_data)
         buttons = []
         fmt_row = []
-        for f in yt_data.get("formats", []):
-            label = f"{f['res']}"
-            fmt_row.append(InlineKeyboardButton(label, callback_data=f"dl_yt:{yt_id}:{f['format_id']}:{f['res']}"))
-            if len(fmt_row) == 2:
-                buttons.append(fmt_row)
-                fmt_row = []
-        if fmt_row:
-            buttons.append(fmt_row)
+        for f in yt_data.get("formats", [])[:3]:
+            fmt_row.append(InlineKeyboardButton(f"{f['res']}", callback_data=f"dl_yt:{yt_id}:{f['format_id']}:{f['res']}"))
+        fmt_row.append(InlineKeyboardButton("🎵 MP3", callback_data=f"dl_yt_audio:{yt_id}"))
+        buttons.append(fmt_row)
         buttons.append([
-            InlineKeyboardButton("🎵 MP3 320 kbps", callback_data=f"dl_yt_audio:{yt_id}"),
-            InlineKeyboardButton("🖼️ HD Cover", callback_data=f"dl_cover:{yt_id}")
+            InlineKeyboardButton("📁 Doc", callback_data=f"dl_yt_doc:{yt_id}"),
+            InlineKeyboardButton("🖼️ Cover", callback_data=f"dl_cover:{yt_id}"),
+            InlineKeyboardButton("🎧 Shazam", callback_data=f"shazam_yt:{yt_id}")
         ])
         await status_msg.edit_text(yt_msg, reply_markup=InlineKeyboardMarkup(buttons), parse_mode=constants.ParseMode.HTML)
         return
@@ -507,10 +473,11 @@ async def check_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
 
         ig_msg = build_instagram_stats_message(ig_data)
         buttons = [
-            [InlineKeyboardButton("📥 Download (Original)", callback_data=f"dl_ig:{ig_id}")],
             [
-                InlineKeyboardButton("🎧 Shazam", callback_data=f"shazam_ig:{ig_id}"),
-                InlineKeyboardButton("🖼️ HD Cover", callback_data=f"dl_cover:{ig_id}")
+                InlineKeyboardButton("📥 Tải Video", callback_data=f"dl_ig:{ig_id}"),
+                InlineKeyboardButton("📁 Doc", callback_data=f"dl_ig_doc:{ig_id}"),
+                InlineKeyboardButton("🖼️ Cover", callback_data=f"dl_cover:{ig_id}"),
+                InlineKeyboardButton("🎧 Shazam", callback_data=f"shazam_ig:{ig_id}")
             ]
         ]
         await status_msg.edit_text(ig_msg, reply_markup=InlineKeyboardMarkup(buttons), parse_mode=constants.ParseMode.HTML)
@@ -542,19 +509,12 @@ async def chat_member_updated_handler(update: Update, context: ContextTypes.DEFA
         database.get_group_settings(chat.id, chat.title or "")
 
         welcome_text = (
-            "🎉 <b>CẢM ƠN BẠN ĐÃ THÊM TIKTOK-TWEAKS VÀO NHÓM!</b> 🤖\n"
-            "━━━━━━━━━━━━━━━━━━━━\n"
-            "Tôi là bot hỗ trợ tải video không logo & nhận diện âm nhạc chuyên nghiệp:\n\n"
-            "✨ <b>TÍNH NĂNG NHÓM:</b>\n"
-            "├ 🧲 <b>Auto-Download:</b> Tự động tải thẳng video vào nhóm khi có link\n"
-            "├ 🚀 <b>Full 4K & Đa nền tảng:</b> TikTok, YouTube, Instagram, Twitter/X, Pinterest, Spotify\n"
-            "├ 🎧 <b>Shazam Nhạc:</b> Gửi tin nhắn thoại/video để tìm tên bài hát\n"
-            "├ 📁 <b>Document Mode:</b> Hỗ trợ gửi file gốc không bị nén\n"
-            "└ ⚙️ <b>Cài đặt nhóm:</b> Gõ /group_settings để bật/tắt tự động tải\n\n"
-            "👉 <i>Hãy gửi thử 1 link video TikTok hoặc YouTube Shorts vào đây để trải nghiệm!</i>"
+            f"👋 Xin chào <b>{chat.title}</b>!\n"
+            "Tôi là <b>TikTok Tweaks Bot</b> — hỗ trợ tải video TikTok (120fps), YouTube 4K, IG, X, Pinterest & Spotify.\n"
+            "👉 <i>Gửi link vào nhóm để tải tự động!</i>"
         )
         keyboard = [
-            [InlineKeyboardButton("⚙️ Cài đặt nhóm (/group_settings)", callback_data="group_settings_menu")]
+            [InlineKeyboardButton("⚙️ Cài đặt nhóm", callback_data="group_settings_menu")]
         ]
         await context.bot.send_message(
             chat_id=chat.id,
@@ -799,12 +759,14 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         # Hybrid Card Spotify
         sp_msg = build_spotify_stats_message(sp_data)
         keyboard = [
-            [InlineKeyboardButton("⬇️ Tải Full Track MP3 320 kbps", callback_data=f"dl_sp_mp3:{track_id}")],
             [
-                InlineKeyboardButton("🟢 Mở Spotify", url=media_url),
-                InlineKeyboardButton("🖼️ Ảnh Bìa Gốc", callback_data=f"dl_cover:{track_id}")
+                InlineKeyboardButton("⬇️ Tải MP3 320k", callback_data=f"dl_sp_mp3:{track_id}"),
+                InlineKeyboardButton("🟢 Mở Spotify", url=media_url)
             ],
-            [InlineKeyboardButton("❌ Đóng", callback_data=f"close:{track_id}")]
+            [
+                InlineKeyboardButton("🖼️ Cover", callback_data=f"dl_cover:{track_id}"),
+                InlineKeyboardButton("❌ Đóng", callback_data=f"close:{track_id}")
+            ]
         ]
         await status_msg.edit_text(sp_msg, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode=constants.ParseMode.HTML)
         return
@@ -845,25 +807,23 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                     except Exception: pass
             return
 
-        # Hybrid Card YouTube
+        # Hybrid Card YouTube (2 hàng gọn gàng)
         yt_msg = build_youtube_stats_message(yt_data)
         buttons = []
         row1 = []
         if yt_data.get("is_4k"):
-            row1.append(InlineKeyboardButton("🏆 Tải 4K Ultra HD", callback_data=f"dl_yt:4k:{yt_id}"))
-        row1.append(InlineKeyboardButton("⚡ 1080p FHD", callback_data=f"dl_yt:1080p:{yt_id}"))
-        row1.append(InlineKeyboardButton("🎬 720p HD", callback_data=f"dl_yt:720p:{yt_id}"))
+            row1.append(InlineKeyboardButton("🏆 4K", callback_data=f"dl_yt:4k:{yt_id}"))
+        row1.append(InlineKeyboardButton("⚡ 1080p", callback_data=f"dl_yt:1080p:{yt_id}"))
+        row1.append(InlineKeyboardButton("🎬 720p", callback_data=f"dl_yt:720p:{yt_id}"))
+        row1.append(InlineKeyboardButton("🎵 MP3", callback_data=f"dl_yt_mp3:{yt_id}"))
         buttons.append(row1)
 
         buttons.append([
-            InlineKeyboardButton("📁 Tải File Gốc (Document)", callback_data=f"dl_yt_doc:{yt_id}"),
-            InlineKeyboardButton("🎵 Tải MP3 320 kbps", callback_data=f"dl_yt_mp3:{yt_id}")
+            InlineKeyboardButton("📁 Doc", callback_data=f"dl_yt_doc:{yt_id}"),
+            InlineKeyboardButton("🖼️ Cover", callback_data=f"dl_cover:{yt_id}"),
+            InlineKeyboardButton("🎧 Shazam", callback_data=f"shazam_yt:{yt_id}"),
+            InlineKeyboardButton("❌ Đóng", callback_data=f"close:{yt_id}")
         ])
-        buttons.append([
-            InlineKeyboardButton("🎧 Nhận diện nhạc (Shazam)", callback_data=f"shazam_yt:{yt_id}"),
-            InlineKeyboardButton("🖼️ Ảnh Bìa Gốc", callback_data=f"dl_cover:{yt_id}")
-        ])
-        buttons.append([InlineKeyboardButton("❌ Đóng", callback_data=f"close:{yt_id}")])
 
         await status_msg.edit_text(yt_msg, reply_markup=InlineKeyboardMarkup(buttons), parse_mode=constants.ParseMode.HTML)
         return
@@ -906,12 +866,12 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
         tw_msg = build_twitter_stats_message(tw_data)
         keyboard = [
-            [InlineKeyboardButton("📥 Tải Video Twitter/X (Gốc)", callback_data=f"dl_tw:{tw_id}")],
             [
-                InlineKeyboardButton("📁 Tải File Gốc (Document)", callback_data=f"dl_tw_doc:{tw_id}"),
-                InlineKeyboardButton("🎧 Nhận diện nhạc (Shazam)", callback_data=f"shazam_tw:{tw_id}")
-            ],
-            [InlineKeyboardButton("❌ Đóng", callback_data=f"close:{tw_id}")]
+                InlineKeyboardButton("📥 Tải Video", callback_data=f"dl_tw:{tw_id}"),
+                InlineKeyboardButton("📁 Doc", callback_data=f"dl_tw_doc:{tw_id}"),
+                InlineKeyboardButton("🎧 Shazam", callback_data=f"shazam_tw:{tw_id}"),
+                InlineKeyboardButton("❌ Đóng", callback_data=f"close:{tw_id}")
+            ]
         ]
         await status_msg.edit_text(tw_msg, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode=constants.ParseMode.HTML)
         return
@@ -954,12 +914,12 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
         pin_msg = build_pinterest_stats_message(pin_data)
         keyboard = [
-            [InlineKeyboardButton("📥 Tải Media Pinterest (Gốc)", callback_data=f"dl_pin:{pin_id}")],
             [
-                InlineKeyboardButton("📁 Tải File Gốc (Document)", callback_data=f"dl_pin_doc:{pin_id}"),
-                InlineKeyboardButton("🖼️ Ảnh Bìa Full", callback_data=f"dl_cover:{pin_id}")
-            ],
-            [InlineKeyboardButton("❌ Đóng", callback_data=f"close:{pin_id}")]
+                InlineKeyboardButton("📥 Tải Về", callback_data=f"dl_pin:{pin_id}"),
+                InlineKeyboardButton("📁 Doc", callback_data=f"dl_pin_doc:{pin_id}"),
+                InlineKeyboardButton("🖼️ Cover", callback_data=f"dl_cover:{pin_id}"),
+                InlineKeyboardButton("❌ Đóng", callback_data=f"close:{pin_id}")
+            ]
         ]
         await status_msg.edit_text(pin_msg, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode=constants.ParseMode.HTML)
         return
@@ -1035,14 +995,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
         ig_msg = build_instagram_stats_message(ig_data)
         keyboard = [
-            [InlineKeyboardButton("📥 Tải Video Instagram", callback_data=f"dl_ig:{ig_id}")],
             [
-                InlineKeyboardButton("📁 Tải File Gốc (Document)", callback_data=f"dl_ig_doc:{ig_id}"),
-                InlineKeyboardButton("🎧 Nhận diện nhạc (Shazam)", callback_data=f"shazam_ig:{ig_id}")
-            ],
-            [
-                InlineKeyboardButton("🖼️ Ảnh Bìa Gốc", callback_data=f"dl_cover:{ig_id}"),
-                InlineKeyboardButton("❌ Đóng", callback_data=f"close:{ig_id}")
+                InlineKeyboardButton("📥 Tải Video", callback_data=f"dl_ig:{ig_id}"),
+                InlineKeyboardButton("📁 Doc", callback_data=f"dl_ig_doc:{ig_id}"),
+                InlineKeyboardButton("🖼️ Cover", callback_data=f"dl_cover:{ig_id}"),
+                InlineKeyboardButton("🎧 Shazam", callback_data=f"shazam_ig:{ig_id}")
             ]
         ]
         await status_msg.edit_text(ig_msg, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode=constants.ParseMode.HTML)
@@ -1101,25 +1058,19 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
                     except Exception: pass
         return
 
-    # Chế độ Hybrid hoặc Checker: hiển thị card đầy đủ
+    # Chế độ Hybrid hoặc Checker: hiển thị card đầy đủ (2 hàng nút gọn gàng)
     tt_msg = build_video_stats_message(data)
     buttons = [
         [
-            InlineKeyboardButton(f"📥 Original ({app_size_mb:.1f}MB)", callback_data=f"dl_tt:original:{video_id}"),
-            InlineKeyboardButton(f"⚡ Standard ({browser_size_mb:.1f}MB)", callback_data=f"dl_tt:standard:{video_id}")
+            InlineKeyboardButton(f"📥 Gốc ({app_size_mb:.1f}M)", callback_data=f"dl_tt:original:{video_id}"),
+            InlineKeyboardButton(f"⚡ Web ({browser_size_mb:.1f}M)", callback_data=f"dl_tt:standard:{video_id}"),
+            InlineKeyboardButton("🎵 Nhạc", callback_data=f"dl_tt_audio:{video_id}")
         ],
         [
-            InlineKeyboardButton("📁 Document (Original)", callback_data=f"dl_tt_doc:{video_id}"),
-            InlineKeyboardButton("🎵 Audio Track", callback_data=f"dl_tt_audio:{video_id}")
-        ],
-        [
-            InlineKeyboardButton("📊 Author Profile", callback_data=f"profile:{data.get('author', {}).get('unique_id', '')}"),
-            InlineKeyboardButton("🔮 Related Videos", callback_data=f"similar:{video_id}")
-        ],
-        [
+            InlineKeyboardButton("📁 Doc", callback_data=f"dl_tt_doc:{video_id}"),
+            InlineKeyboardButton("🖼️ Cover", callback_data=f"dl_cover:{video_id}"),
             InlineKeyboardButton("🎧 Shazam", callback_data=f"shazam_tt:{video_id}"),
-            InlineKeyboardButton("🖼️ HD Cover", callback_data=f"dl_cover:{video_id}"),
-            InlineKeyboardButton("🔄 Recheck", callback_data=f"recheck:{video_id}")
+            InlineKeyboardButton("📊 Kênh", callback_data=f"profile:{data.get('author', {}).get('unique_id', '')}")
         ]
     ]
     await status_msg.edit_text(tt_msg, reply_markup=InlineKeyboardMarkup(buttons), parse_mode=constants.ParseMode.HTML)
@@ -1194,18 +1145,15 @@ async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TY
             webapp_link = f"{config.WEBAPP_URL}?user_id={uid}&dl={user_data.get('total_downloads', 0)}&ck={user_data.get('total_checks', 0)}"
             buttons.append([InlineKeyboardButton("📱 Mở Mini App (Full Screen)", web_app=WebAppInfo(url=webapp_link))])
         buttons.append([
-            InlineKeyboardButton(f"📁 Document: {'BẬT' if user_data.get('doc_mode') else 'TẮT'}", callback_data="toggle_opt:doc_mode"),
-            InlineKeyboardButton(f"🛡️ No Sig: {'BẬT' if user_data.get('no_signature') else 'TẮT'}", callback_data="toggle_opt:no_signature")
+            InlineKeyboardButton(f"📁 Doc: {'BẬT' if user_data.get('doc_mode') else 'TẮT'}", callback_data="toggle_opt:doc_mode"),
+            InlineKeyboardButton(f"🛡️ No-Sig: {'BẬT' if user_data.get('no_signature') else 'TẮT'}", callback_data="toggle_opt:no_signature"),
+            InlineKeyboardButton(f"💬 Gửi: {(user_data.get('reply_mode') or 'direct').capitalize()}", callback_data="cycle_opt:reply_mode")
         ])
         buttons.append([
-            InlineKeyboardButton(f"💬 Gửi: {(user_data.get('reply_mode') or 'direct').capitalize()}", callback_data="cycle_opt:reply_mode"),
-            InlineKeyboardButton(f"📝 Chữ: {(user_data.get('caption_mode') or 'full').capitalize()}", callback_data="cycle_opt:caption_mode")
+            InlineKeyboardButton(f"📝 Chữ: {(user_data.get('caption_mode') or 'full').capitalize()}", callback_data="cycle_opt:caption_mode"),
+            InlineKeyboardButton("🔄 Làm mới", callback_data=f"user_profile:{uid}"),
+            InlineKeyboardButton("❌ Đóng", callback_data="close_box")
         ])
-        buttons.append([
-            InlineKeyboardButton(f"🌐 Ngôn ngữ: {(user_data.get('language') or 'vi').upper()}", callback_data="cycle_opt:language"),
-            InlineKeyboardButton("🔄 Cập nhật số liệu", callback_data=f"user_profile:{uid}")
-        ])
-        buttons.append([InlineKeyboardButton("❌ Đóng", callback_data="close_box")])
         await query.edit_message_text(profile_msg, reply_markup=InlineKeyboardMarkup(buttons), parse_mode=constants.ParseMode.HTML)
         return
 
@@ -1220,18 +1168,15 @@ async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TY
         profile_msg = build_user_profile_stats_message(user_data)
         buttons = [
             [
-                InlineKeyboardButton(f"📁 Document: {'BẬT' if user_data.get('doc_mode') else 'TẮT'}", callback_data="toggle_opt:doc_mode"),
-                InlineKeyboardButton(f"🛡️ No Sig: {'BẬT' if user_data.get('no_signature') else 'TẮT'}", callback_data="toggle_opt:no_signature")
+                InlineKeyboardButton(f"📁 Doc: {'BẬT' if user_data.get('doc_mode') else 'TẮT'}", callback_data="toggle_opt:doc_mode"),
+                InlineKeyboardButton(f"🛡️ No-Sig: {'BẬT' if user_data.get('no_signature') else 'TẮT'}", callback_data="toggle_opt:no_signature"),
+                InlineKeyboardButton(f"💬 Gửi: {(user_data.get('reply_mode') or 'direct').capitalize()}", callback_data="cycle_opt:reply_mode")
             ],
             [
-                InlineKeyboardButton(f"💬 Gửi: {(user_data.get('reply_mode') or 'direct').capitalize()}", callback_data="cycle_opt:reply_mode"),
-                InlineKeyboardButton(f"📝 Chữ: {(user_data.get('caption_mode') or 'full').capitalize()}", callback_data="cycle_opt:caption_mode")
-            ],
-            [
-                InlineKeyboardButton(f"🌐 Ngôn ngữ: {(user_data.get('language') or 'vi').upper()}", callback_data="cycle_opt:language"),
-                InlineKeyboardButton("🔄 Cập nhật số liệu", callback_data=f"user_profile:{user_id}")
-            ],
-            [InlineKeyboardButton("❌ Đóng", callback_data="close_box")]
+                InlineKeyboardButton(f"📝 Chữ: {(user_data.get('caption_mode') or 'full').capitalize()}", callback_data="cycle_opt:caption_mode"),
+                InlineKeyboardButton("🔄 Làm mới", callback_data=f"user_profile:{user_id}"),
+                InlineKeyboardButton("❌ Đóng", callback_data="close_box")
+            ]
         ]
         await query.edit_message_text(profile_msg, reply_markup=InlineKeyboardMarkup(buttons), parse_mode=constants.ParseMode.HTML)
         return
@@ -1253,18 +1198,15 @@ async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TY
         profile_msg = build_user_profile_stats_message(user_data)
         buttons = [
             [
-                InlineKeyboardButton(f"📁 Document: {'BẬT' if user_data.get('doc_mode') else 'TẮT'}", callback_data="toggle_opt:doc_mode"),
-                InlineKeyboardButton(f"🛡️ No Sig: {'BẬT' if user_data.get('no_signature') else 'TẮT'}", callback_data="toggle_opt:no_signature")
+                InlineKeyboardButton(f"📁 Doc: {'BẬT' if user_data.get('doc_mode') else 'TẮT'}", callback_data="toggle_opt:doc_mode"),
+                InlineKeyboardButton(f"🛡️ No-Sig: {'BẬT' if user_data.get('no_signature') else 'TẮT'}", callback_data="toggle_opt:no_signature"),
+                InlineKeyboardButton(f"💬 Gửi: {(user_data.get('reply_mode') or 'direct').capitalize()}", callback_data="cycle_opt:reply_mode")
             ],
             [
-                InlineKeyboardButton(f"💬 Gửi: {(user_data.get('reply_mode') or 'direct').capitalize()}", callback_data="cycle_opt:reply_mode"),
-                InlineKeyboardButton(f"📝 Chữ: {(user_data.get('caption_mode') or 'full').capitalize()}", callback_data="cycle_opt:caption_mode")
-            ],
-            [
-                InlineKeyboardButton(f"🌐 Ngôn ngữ: {(user_data.get('language') or 'vi').upper()}", callback_data="cycle_opt:language"),
-                InlineKeyboardButton("🔄 Cập nhật số liệu", callback_data=f"user_profile:{user_id}")
-            ],
-            [InlineKeyboardButton("❌ Đóng", callback_data="close_box")]
+                InlineKeyboardButton(f"📝 Chữ: {(user_data.get('caption_mode') or 'full').capitalize()}", callback_data="cycle_opt:caption_mode"),
+                InlineKeyboardButton("🔄 Làm mới", callback_data=f"user_profile:{user_id}"),
+                InlineKeyboardButton("❌ Đóng", callback_data="close_box")
+            ]
         ]
         await query.edit_message_text(profile_msg, reply_markup=InlineKeyboardMarkup(buttons), parse_mode=constants.ParseMode.HTML)
         return
@@ -1281,15 +1223,14 @@ async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TY
         auto_dl = "✅ BẬT" if grp.get("auto_download") else "❌ TẮT"
         silent = "✅ BẬT" if grp.get("silent_mode") else "❌ TẮT"
         msg = (
-            f"👥 <b>CÀI ĐẶT NHÓM: {grp.get('title', 'Group')}</b>\n"
-            f"━━━━━━━━━━━━━━━━━━━━\n"
-            f"• Tự động tải khi gửi link: <b>{auto_dl}</b>\n"
-            f"• Chế độ gửi im lặng (Silent): <b>{silent}</b>\n\n"
-            f"<i>Cài đặt đã được cập nhật thành công!</i>"
+            f"👥 <b>Cài đặt nhóm: {grp.get('title', 'Group')}</b>\n"
+            f"• Tự động tải: <b>{auto_dl}</b> • Gửi im lặng: <b>{silent}</b>"
         )
         keyboard = [
-            [InlineKeyboardButton(f"⚡ Tự động tải: {auto_dl}", callback_data=f"toggle_grp:auto_download:{target_chat}")],
-            [InlineKeyboardButton(f"🔕 Gửi im lặng: {silent}", callback_data=f"toggle_grp:silent_mode:{target_chat}")],
+            [
+                InlineKeyboardButton(f"⚡ Tự động tải: {auto_dl}", callback_data=f"toggle_grp:auto_download:{target_chat}"),
+                InlineKeyboardButton(f"🔕 Gửi im lặng: {silent}", callback_data=f"toggle_grp:silent_mode:{target_chat}")
+            ],
             [InlineKeyboardButton("❌ Đóng", callback_data="close_box")]
         ]
         await query.edit_message_text(msg, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode=constants.ParseMode.HTML)
@@ -1745,26 +1686,16 @@ async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TY
 
             keyboard = [
                 [
-                    InlineKeyboardButton(f"✨ Original ({app_size_mb:.1f}MB)", callback_data=f"dl_tt:original:{video_id}"),
-                    InlineKeyboardButton(f"🎬 Standard ({browser_size_mb:.1f}MB)", callback_data=f"dl_tt:standard:{video_id}")
+                    InlineKeyboardButton(f"📥 Gốc ({app_size_mb:.1f}M)", callback_data=f"dl_tt:original:{video_id}"),
+                    InlineKeyboardButton(f"⚡ Web ({browser_size_mb:.1f}M)", callback_data=f"dl_tt:standard:{video_id}"),
+                    InlineKeyboardButton("🎵 Nhạc", callback_data=f"dl_tt_audio:{video_id}")
                 ],
                 [
-                    InlineKeyboardButton("📁 Tải File Gốc (Document)", callback_data=f"dl_tt_doc:{video_id}"),
-                    InlineKeyboardButton("🎵 Tải Nhạc MP3", callback_data=f"dl_tt_audio:{video_id}")
-                ],
-                [
-                    InlineKeyboardButton("🎧 Nhận diện nhạc (Shazam)", callback_data=f"shazam_tt:{video_id}"),
-                    InlineKeyboardButton("🖼️ Ảnh Bìa Gốc", callback_data=f"dl_cover:{video_id}")
-                ],
-                [
-                    InlineKeyboardButton("📈 Profile 12 Video", callback_data=f"profile:{new_data.get('author', {}).get('unique_id', '')}"),
-                    InlineKeyboardButton("🔮 Video tương tự", callback_data=f"similar:{video_id}")
-                ],
-                [
-                    InlineKeyboardButton("🔄 Quét lại (Recheck)", callback_data=f"recheck:{video_id}"),
-                    InlineKeyboardButton("👤 Thông tin tác giả", callback_data=f"user_info:{video_id}")
-                ],
-                [InlineKeyboardButton("❌ Đóng", callback_data=f"close:{video_id}")]
+                    InlineKeyboardButton("📁 Doc", callback_data=f"dl_tt_doc:{video_id}"),
+                    InlineKeyboardButton("🖼️ Cover", callback_data=f"dl_cover:{video_id}"),
+                    InlineKeyboardButton("🎧 Shazam", callback_data=f"shazam_tt:{video_id}"),
+                    InlineKeyboardButton("📊 Kênh", callback_data=f"profile:{new_data.get('author', {}).get('unique_id', '')}")
+                ]
             ]
             await query.edit_message_text(new_msg, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode=constants.ParseMode.HTML)
         else:

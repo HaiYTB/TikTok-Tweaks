@@ -157,36 +157,28 @@ def build_shazam_card(info: Dict[str, Any]) -> Tuple[str, InlineKeyboardMarkup]:
 
     text = (
         f"{preview_tag}"
-        f"🎧 <b>Track Identified</b> • <i>Shazam Engine</i>\n\n"
-        f"🎵 <b>{title}</b>\n"
-        f"🎤 <code>{artist}</code> • <i>{genres}</i>\n"
+        f"🎧 <b>{title}</b>\n"
+        f"🎤 <code>{artist}</code> • <i>{genres}</i>"
     )
 
-    buttons = []
-    row1 = []
-    if spotify_url:
-        row1.append(InlineKeyboardButton("🟢 Spotify", url=spotify_url))
-    if yt_music_url:
-        row1.append(InlineKeyboardButton("🔴 YouTube Music", url=yt_music_url))
-    if row1:
-        buttons.append(row1)
-
-    row2 = []
-    if apple_music_url:
-        row2.append(InlineKeyboardButton("🍏 Apple Music", url=apple_music_url))
-    if shazam_url:
-        row2.append(InlineKeyboardButton("🔵 Shazam Web", url=shazam_url))
-    if row2:
-        buttons.append(row2)
-
-    # Lưu cache để tránh vượt quá 64 bytes callback_data của Telegram
     s_id = uuid.uuid4().hex[:8]
     SHAZAM_CACHE[s_id] = info
 
-    # Nút tìm kiếm tải mp3 với short id
-    buttons.append([
-        InlineKeyboardButton("⬇️ Download MP3 320 kbps", callback_data=f"dl_sh_mp3:{s_id}")
-    ])
+    links_row = []
+    if spotify_url:
+        links_row.append(InlineKeyboardButton("🟢 Spotify", url=spotify_url))
+    if yt_music_url:
+        links_row.append(InlineKeyboardButton("🔴 YouTube", url=yt_music_url))
+    if apple_music_url:
+        links_row.append(InlineKeyboardButton("🍏 Apple", url=apple_music_url))
+    if shazam_url:
+        links_row.append(InlineKeyboardButton("🔵 Shazam", url=shazam_url))
+
+    buttons = [
+        [InlineKeyboardButton("⬇️ Tải MP3 320 kbps", callback_data=f"dl_sh_mp3:{s_id}")]
+    ]
+    if links_row:
+        buttons.append(links_row)
 
     return text, InlineKeyboardMarkup(buttons)
 
