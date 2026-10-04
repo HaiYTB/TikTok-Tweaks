@@ -126,17 +126,19 @@ def infer_video_category(title: str, hashtags: List[str]) -> str:
 def infer_upload_source(data: Dict[str, Any], meta: Dict[str, Any]) -> str:
     """Xác định nguồn xuất bản video (Upload Source Category)."""
     title = (data.get("title") or "").lower()
-    if "capcut" in title or data.get("anchors") or data.get("commerce_info"):
-        return "🎬 CapCut Creative Suite / Desktop Video Editor"
+    anchors = data.get("anchors") or []
+    has_capcut_anchor = any("capcut" in str(a).lower() for a in anchors) if isinstance(anchors, list) else False
+    
+    if "capcut" in title or has_capcut_anchor:
+        return "🎬 CapCut Creative Suite"
     if data.get("is_ad"):
         return "📢 TikTok Ads Manager / Business Studio"
     
-    fps = meta.get("fps", 30)
-    bitrate = meta.get("bitrate_mbps", 0)
-    if fps > 60 or bitrate > 25.0:
-        return "💻 TikTok Web Studio / Desktop Upload (Chất lượng gốc không nén)"
+    # Kiểm tra nếu đăng từ Web Browser / Desktop (wm_size == 0)
+    if data.get("wm_size") == 0:
+        return "🌐 Web Browser / Desktop Studio"
     
-    return "📱 TikTok Mobile App (iOS / Android Native Camera)"
+    return "📱 TikTok Mobile App"
 
 def parse_mp4_full_metadata(chunk: bytes, file_size: int = 0) -> Dict[str, Any]:
     """Trích xuất toàn bộ metadata chi tiết từ MP4 header."""
