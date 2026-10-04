@@ -378,16 +378,16 @@ async def check_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     if not media_url and (is_pure_user or (username_match and not target_text.startswith("http"))):
         uname = (username_match.group(1) if username_match else target_text.lstrip("@")).strip()
         status_msg = await update.message.reply_text(
-            f"⏳ <b>Analyzing @{uname}'s profile & last 12 videos...</b>",
+            f"⏳ <b>Đang phân tích kênh @{uname} và 12 video gần nhất...</b>",
             parse_mode=constants.ParseMode.HTML
         )
-        videos, err = await fetch_author_recent_12_videos(uname, max_videos=12)
+        videos = await fetch_author_recent_12_videos(uname)
         if not videos:
-            await status_msg.edit_text(f"❌ Could not retrieve profile for @{uname}: {err or 'Account might be private or restricted.'}")
+            await status_msg.edit_text(f"❌ Không thể phân tích tài khoản @{uname} (Kênh có thể ở chế độ riêng tư hoặc bị giới hạn).")
             return
         database.record_check(user_id)
         profile_msg = build_profile_analytics_message(uname, f"@{uname}", videos)
-        await status_msg.edit_text(profile_msg, parse_mode=constants.ParseMode.HTML)
+        await status_msg.edit_text(profile_msg, parse_mode=constants.ParseMode.HTML, disable_web_page_preview=True)
         return
 
     if not media_url or not platform:

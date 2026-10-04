@@ -400,11 +400,14 @@ async def fetch_author_recent_12_videos(username: str) -> List[Dict[str, Any]]:
             results = []
             for e in entries:
                 results.append({
-                    "id": e.get("id"),
-                    "title": e.get("title") or "Không có tiêu đề",
+                    "id": str(e.get("id") or ""),
+                    "title": (e.get("title") or "Không có tiêu đề").strip(),
                     "views": int(e.get("view_count") or 0),
                     "likes": int(e.get("like_count") or 0),
                     "comments": int(e.get("comment_count") or 0),
+                    "shares": int(e.get("repost_count") or 0),
+                    "saves": int(e.get("save_count") or 0),
+                    "timestamp": int(e.get("timestamp") or 0),
                     "duration": int(e.get("duration") or 0),
                     "url": e.get("url") or f"https://www.tiktok.com/@{username}/video/{e.get('id')}"
                 })
