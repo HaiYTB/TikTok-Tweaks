@@ -1,110 +1,154 @@
-# TikTok-Tweaks: Premium Multi-Platform Bot & Shazam Music Recognition
+# TikTok-Tweaks
 
-> **TikTok-Tweaks Bot** là trợ lý bot Telegram bằng Python toàn diện và mạnh mẽ nhất: Tải media không logo từ **TikTok**, **YouTube (Full 4K Ultra HD)**, **Instagram**, **Twitter/X**, **Pinterest**, **Spotify (MP3 320 kbps)**, nhận diện bài hát **Shazam** từ âm thanh / voice / video, tích hợp **Telegram Mini App** với số liệu thực tế và hỗ trợ nhóm chat (Groups) chuyên sâu.
+[![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](https://python.org)
+[![Telegram Bot API](https://img.shields.io/badge/Telegram-Bot%20API%2020.x-2CA5E0?logo=telegram&logoColor=white)](https://core.telegram.org/bots/api)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Code Style: Clean](https://img.shields.io/badge/Code%20Style-PEP%208-brightgreen)](https://pep8.org)
 
----
-
-## 🌟 BẢNG TÍNH NĂNG NÂNG CẤP MỚI NHẤT
-
-### 🧲 1. Tải Video 4K & Đa Nền Tảng (Multi-Platform Downloader)
-- 🏆 **Full 4K Ultra HD & 120fps Support:** Hỗ trợ video độ phân giải cao lên đến 4K (2160p), 1440p, 1080p FHD, tốc độ khung hình 120fps, video dài và file lên tới **512 MB**.
-- 📁 **Original file, without Telegram compression (Document Mode):** Tùy chọn gửi file gốc nguyên bản qua Document (`send_document`), giữ nguyên 100% độ nét và màu sắc mà không bị Telegram nén giảm chất lượng.
-- 🖼️ **Covers and preview frames at full size:** Tải ảnh bìa và khung hình preview chất lượng gốc (Full Size).
-- 🌐 **Hỗ trợ 6 nền tảng lớn:**
-  - 🎵 **TikTok:** Video không logo, 120fps, âm thanh tách rời, VQScore.
-  - 🔴 **YouTube:** Tải Shorts và video thường với lựa chọn 4K, 1080p, 720p, hoặc MP3 320 kbps.
-  - 📸 **Instagram:** Tải mượt mà Reels, Posts, Stories không dính logo.
-  - 🐦 **Twitter / X:** Tải video từ tweet với chất lượng cao nhất.
-  - 📌 **Pinterest:** Tải video pin hoặc ảnh tĩnh độ phân giải cao.
-  - 🟢 **Spotify Music:** Tải trọn vẹn track nhạc chuẩn **MP3 320 kbps High Fidelity** kèm ID3 tags và album cover art!
+High-performance Telegram bot for uncompressed media extraction, video stream inspection, real-time Shazam audio recognition, and Telegram Mini App integration.
 
 ---
 
-### ❤️ 2. Nhận Diện Âm Nhạc Shazam (Shazam Engine 🆕)
-- 🎧 **Videos, photos & audio recognition:** Nhận diện bài hát từ bất kỳ nguồn nào có nhạc.
-- 🎤 **Đa dạng định dạng:** Gửi hoặc chuyển tiếp tin nhắn thoại (Voice note), video tròn (Video note), video clip hoặc file audio — bot sẽ nghe và gửi lại tên track ngay lập tức!
-- 🎛️ **Edits and voiceovers:** Nhận diện được cả các bản nhạc remix, speed up, nhạc nền lồng tiếng.
-- 🔗 **Direct streaming links:** Cung cấp link nghe trực tiếp trên Spotify, Apple Music, YouTube Music, Shazam Web và nút tải ngay bản thu **MP3 320 kbps**.
+## Overview
+
+**TikTok-Tweaks** is an asynchronous Python bot engineered for content creators, video editors, and power users. It provides watermark-free media downloads across six major platforms, binary MP4 container inspection, creator engagement analytics, and instant audio identification directly from Telegram chats or groups.
+
+### Highlights
+
+- **Multi-Platform Support:** TikTok, YouTube (up to 4K Ultra HD), Instagram, Twitter/X, Pinterest, and Spotify.
+- **Deep Stream Inspection (`/check`):** Probes binary MP4 atoms to extract real video codec (H.265/HEVC vs. H.264), bitrate, frame rates, and TikTok VQScore quality metric.
+- **Shazam Engine:** In-memory PCM audio fingerprinting from voice messages, video notes, and forwarded clips.
+- **Document Mode:** Delivers uncompressed original files without Telegram's native video transcoding.
+- **Telegram Mini App:** Modern HTML5 glassmorphism interface syncing real-time SQLite statistics and user preferences.
+- **Group Chat Automation:** Automatic media extraction without quote-reply clutter, configurable per group.
 
 ---
 
-### 📱 3. Telegram Mini App & Profile Analytics (Mini App 🆕)
-- 📊 **Real Numbers Profile:** Bảng hồ sơ thống kê số liệu thực tế được lưu vào SQLite Database:
-  - Tổng số lượt tải (Downloads)
-  - Tổng số lượt phân tích (Checks)
-  - Tổng số lượt nhận diện nhạc (Shazams)
-  - Phân loại chi tiết theo nền tảng (TikTok, YouTube, Instagram, Twitter, Pinterest, Spotify).
-- ⚙️ **All Switches in One Screen:** Điều khiển toàn bộ cài đặt trên một giao diện thống nhất (trong Mini App HTML5 hoặc ngay trong chat Telegram):
-  - 🌐 **Ngôn ngữ:** Tiếng Việt / English / Русский
-  - 💬 **Chế độ phản hồi:** Trực tiếp (Direct) / Reply / Im lặng (Silent)
-  - 📝 **Định dạng Caption:** Đầy đủ / Rút gọn / Tắt chữ
-  - 📁 **Document Mode:** Bật/Tắt gửi file gốc không nén
-  - 🛡️ **No Signature:** Bật/Tắt gỡ bỏ chữ ký quảng bá của bot khỏi caption.
+## Feature Matrix
+
+| Platform | Max Resolution | Audio Format | Stream Inspection | Special Features |
+| :--- | :--- | :--- | :--- | :--- |
+| **TikTok** | 1080p @ 120 FPS | MP3 / AAC | Full (`/check`) | No watermark, VQScore, 12-video profile analytics |
+| **YouTube** | 4K Ultra HD (2160p) | MP3 320 kbps | Format picker | Shorts & long-form, multi-resolution selection |
+| **Instagram** | 1080p FHD | M4A / AAC | Metadata extraction | Reels, Posts, Stories |
+| **Twitter / X** | Source Native | AAC | Stream info | Direct MP4 link extraction |
+| **Pinterest** | Original Resolution | N/A | Image / Video probe | Pins, animated clips, full-size images |
+| **Spotify** | N/A | MP3 320 kbps | Metadata & ID3 | Full tracks with album art & artist metadata |
 
 ---
 
-### 👥 4. Tối Ưu Hóa Nhóm Chat (Groups 🆕)
-- 👋 **Group Greet:** Bot tự động gửi lời chào mừng khi được thêm vào nhóm chat kèm hướng dẫn nhanh.
-- ⚡ **Auto-Download:** Tự động tải thẳng video/audio vào nhóm chat khi thành viên gửi link mà không cần quote reply rườm rà.
-- 🎛️ **Group Settings vs Member Settings:**
-  - Quản trị viên dùng `/group_settings` để cài đặt mặc định cho cả nhóm (bật/tắt tự động tải, chế độ im lặng).
-  - Từng thành viên vẫn giữ cài đặt cá nhân riêng (Document Mode, Caption, v.v.).
-- 🚀 **Không giới hạn (No Limits):** Không giới hạn số lượt tải hàng ngày, hỗ trợ file 512MB, chất lượng vượt 1080p (4K).
+## Technical Architecture
+
+### 1. MP4 Atom Probing
+Rather than relying solely on server headers, the inspector decodes binary MP4 boxes (`ftyp`, `tkhd`, `mdhd`) from initial stream bytes:
+- Detects actual video codecs: `hvc1`/`hev1` (H.265), `avc1` (H.264), `av01` (AV1), and `vp09` (VP9).
+- Accurately measures timescale, duration, exact frame rate (FPS), and bitrates for both mobile app and web browser streams.
+- Calculates the proprietary **VQScore (0–100)** to determine compression quality.
+
+### 2. TLS Impersonation & CDN Resilience
+To prevent `403 Forbidden` and rate-limit blocks from TikTok CDNs:
+- Primary downloads utilize chunked `aiohttp` streaming up to 512 MB.
+- Automatic fallback routes through `curl_cffi` using Chrome TLS fingerprint impersonation.
+
+### 3. In-Memory Audio Identification
+The Shazam integration extracts PCM audio directly using `pydub` and `imageio-ffmpeg` without temporary disk I/O, generating signatures within milliseconds.
 
 ---
 
-## 📁 Cấu Trúc Dự Án
+## Installation
+
+### Prerequisites
+
+- Python 3.10 or higher
+- [FFmpeg](https://ffmpeg.org/) installed and available in system PATH (or via `imageio-ffmpeg`)
+- Git
+
+### Setup
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/HaiYTB/TikTok-Tweaks.git
+   cd TikTok-Tweaks
+   ```
+
+2. **Create and activate a virtual environment:**
+   ```bash
+   # Windows (PowerShell)
+   python -m venv .venv
+   .\.venv\Scripts\Activate.ps1
+
+   # Linux / macOS
+   python3 -m venv .venv
+   source .venv/bin/activate
+   ```
+
+3. **Install dependencies:**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. **Configure environment variables:**
+   Copy `.env.example` to `.env` and fill in your bot token:
+   ```bash
+   cp .env.example .env
+   ```
+
+5. **Start the bot:**
+   ```bash
+   python bot.py
+   ```
+
+---
+
+## Configuration
+
+All configuration is managed through environment variables in `.env`:
+
+| Variable | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `BOT_TOKEN` | `string` | *(Required)* | Telegram Bot Token from [@BotFather](https://t.me/BotFather) |
+| `DEFAULT_MODE` | `string` | `hybrid` | Default bot mode: `hybrid`, `downloader`, or `checker` |
+| `MAX_FILE_SIZE_MB` | `integer` | `512` | Maximum file download limit in megabytes |
+| `GROUP_AUTO_DOWNLOAD` | `boolean` | `true` | Automatically download media when links are sent in groups |
+| `WEBAPP_URL` | `string` | `""` | Public HTTPS URL hosting `webapp/index.html` for Mini App |
+
+---
+
+## Command Reference
+
+| Command | Arguments | Description |
+| :--- | :--- | :--- |
+| `/start` | None | Open the main interactive navigation dashboard. |
+| `/check` | `<url>` or `@username` | Deep-inspect video stream specs, VQScore, or creator's last 12 uploads. |
+| `/mode` | None | Switch operating mode between Hybrid, Downloader, and Checker. |
+| `/profile` | None | Display personal download/inspection stats and launch the Mini App. |
+| `/settings` | None | Toggle Document mode, clean captions, and response delivery mode. |
+| `/shazam` | None | View audio recognition instructions. |
+| `/group_settings` | None | Manage group-specific permissions (auto-download, silent delivery). |
+| `/help` | None | Comprehensive guide for commands and media links. |
+
+---
+
+## Project Structure
 
 ```
 TikTok-Tweaks/
-├── bot.py                  # Điểm khởi chạy chính (Handlers, Callbacks, Commands, Groups, Shazam)
-├── config.py               # Biến môi trường, BOT_TOKEN, WEBAPP_URL, giới hạn 512MB
-├── database.py             # Cơ sở dữ liệu SQLite lưu trữ Real Stats & Cài đặt cá nhân/nhóm
-├── multi_platform_api.py   # Bộ trích xuất & tải YouTube (4K), Twitter, Pinterest, Spotify MP3 320k
-├── tiktok_api.py           # Module API TikTok, Instagram, Author 12-videos, VQScore, MP4 atoms
-├── shazam_service.py       # Bộ nhận diện âm nhạc Shazam siêu tốc từ PCM Stream
-├── stats_formatter.py      # Định dạng tin nhắn Checker, Profile Cards, Emojis cao cấp
+├── bot.py                  # Core bot entrypoint (handlers, callbacks, group dispatch)
+├── config.py               # Environment validation and application settings
+├── database.py             # SQLite interface for user analytics and group settings
+├── multi_platform_api.py   # Downloaders for YouTube (4K), Twitter, Pinterest, Spotify
+├── tiktok_api.py           # TikTok & Instagram API, MP4 parser, and VQScore algorithm
+├── shazam_service.py       # In-memory PCM Shazam recognition service
+├── stats_formatter.py      # Minimalist message formatters and analytics cards
 ├── webapp/
-│   └── index.html          # Telegram Mini App giao diện Glassmorphism với số liệu thực tế
-├── requirements.txt        # Danh sách thư viện cần thiết
-├── .env.example            # Mẫu cấu hình
-└── README.md               # Hướng dẫn chi tiết
+│   └── index.html          # Telegram Mini App with Glassmorphism UI
+├── requirements.txt        # Python dependency manifest
+├── .env.example            # Environment configuration template
+└── README.md               # Project documentation
 ```
 
 ---
 
-## 🚀 Hướng Dẫn Cài Đặt & Sử Dụng
+## License
 
-### 1. Chuẩn Bị Môi Trường
-```shell
-pip install -r requirements.txt
-```
-
-### 2. Cấu Hình Bot Token
-Mở file `.env` và điền token lấy từ [@BotFather](https://t.me/BotFather):
-```env
-BOT_TOKEN=123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ
-DEFAULT_MODE=hybrid
-MAX_FILE_SIZE_MB=512
-GROUP_AUTO_DOWNLOAD=true
-WEBAPP_URL=
-```
-
-### 3. Khởi Chạy Bot
-```shell
-python bot.py
-```
-
-### 4. Danh Sách Lệnh
-- `/start` - Chào mừng và mở menu điều hướng chính.
-- `/mode` - Chuyển đổi 3 chế độ hoạt động (Hybrid, Downloader, Checker).
-- `/settings` - Tùy chỉnh cài đặt cá nhân (Document mode, Reply, Caption, No signature).
-- `/profile` (hoặc `/webapp`, `/app`) - Xem số liệu thực tế và mở Telegram Mini App.
-- `/shazam` - Hướng dẫn nhận diện bài hát qua âm thanh/video.
-- `/group_settings` - Cấu hình bot cho nhóm chat (dành cho Admin).
-- `/help` - Hướng dẫn chi tiết sử dụng.
-
----
-
-## 🛡️ Giấy Phép (License)
-Dự án được phân phối dưới giấy phép [MIT License](LICENSE).
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
