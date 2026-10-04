@@ -1,6 +1,7 @@
 import os
 import sys
 import re
+import html
 import logging
 import tempfile
 import asyncio
@@ -101,15 +102,16 @@ def get_caption_text(title: str, author_name: str, platform_name: str, user_sett
     if caption_mode == "none":
         return ""
 
-    title_clean = (title or "Media File")[:120]
-    author_clean = author_name or "Creator"
+    title_clean = html.escape((title or "Media File")[:120])
+    author_clean = html.escape(author_name or "Creator")
+    platform_clean = html.escape(platform_name or "Media")
 
     if caption_mode == "minimal":
         caption = f"🎬 <b>{title_clean}</b>"
     else:
         caption = (
             f"🎬 <b>{title_clean}</b>\n"
-            f"👤 <code>{author_clean}</code> | 🌐 {platform_name}"
+            f"👤 <code>{author_clean}</code> | 🌐 {platform_clean}"
         )
 
     if not no_sig:
@@ -415,7 +417,11 @@ async def check_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
             return
         database.record_check(user_id)
         profile_msg = build_profile_analytics_message(uname, f"@{uname}", videos)
-        await status_msg.edit_text(profile_msg, parse_mode=constants.ParseMode.HTML, disable_web_page_preview=True)
+        try:
+            await status_msg.edit_text(profile_msg, parse_mode=constants.ParseMode.HTML, disable_web_page_preview=True)
+        except Exception as e:
+            logger.warning(f"Lỗi parse HTML profile_msg, chuyển sang plain text: {e}")
+            await status_msg.edit_text(re.sub(r'<[^>]+>', '', profile_msg), disable_web_page_preview=True)
         return
 
     if not media_url or not platform:
@@ -1968,7 +1974,11 @@ async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TY
         videos = await fetch_author_recent_12_videos(username)
         report = build_profile_analytics_message(username, username, videos)
         keyboard = [[InlineKeyboardButton("❌ Đóng", callback_data=f"close:{username}")]]
-        await wait_msg.edit_text(report, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode=constants.ParseMode.HTML, disable_web_page_preview=True)
+        try:
+            await wait_msg.edit_text(report, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode=constants.ParseMode.HTML, disable_web_page_preview=True)
+        except Exception as e:
+            logger.warning(f"Lỗi parse HTML profile report, chuyển sang plain text: {e}")
+            await wait_msg.edit_text(re.sub(r'<[^>]+>', '', report), reply_markup=InlineKeyboardMarkup(keyboard), disable_web_page_preview=True)
         return
 
     # Video tương tự (Similar Videos)

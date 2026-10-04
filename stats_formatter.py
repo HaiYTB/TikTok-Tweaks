@@ -1,5 +1,12 @@
 import datetime
+import html
 from typing import Dict, Any, Optional, Tuple, List
+
+def safe_html(text: Any) -> str:
+    """Escape các ký tự đặc biệt HTML (&, <, >) để đảm bảo Telegram parse_mode=HTML không bị lỗi entity."""
+    if text is None:
+        return ""
+    return html.escape(str(text))
 
 COUNTRY_MAP: Dict[str, Tuple[str, str]] = {
     "VN": ("🇻🇳", "Vietnam"),
@@ -156,15 +163,15 @@ def build_video_stats_message(data: Dict[str, Any]) -> str:
     cover_url = data.get("origin_cover") or data.get("cover")
     preview_tag = f'<a href="{cover_url}">&#8205;</a>' if cover_url else ''
 
-    video_id = str(data.get("id") or "N/A")
-    title = (data.get("title") or "Không có tiêu đề").strip()
+    video_id = safe_html(str(data.get("id") or "N/A"))
+    title = safe_html((data.get("title") or "Không có tiêu đề").strip())
     
     author = data.get("author") or {}
-    nickname = author.get("nickname", "Unknown")
-    unique_id = author.get("unique_id", "user")
+    nickname = safe_html(author.get("nickname", "Unknown"))
+    unique_id = safe_html(author.get("unique_id", "user"))
     
     meta = data.get("_meta") or {}
-    upload_source = meta.get("upload_source", "Phone (Gallery)")
+    upload_source = safe_html(meta.get("upload_source", "Phone (Gallery)"))
     upload_country = get_country_display(data.get("region"))
     
     # Shadowban status
@@ -230,15 +237,15 @@ def build_video_stats_message(data: Dict[str, Any]) -> str:
 
     # Details
     ai_gen = "Yes" if meta.get("is_aigc") else "No"
-    category = meta.get("category", "🎬 General Entertainment")
+    category = safe_html(meta.get("category", "🎬 General Entertainment"))
     
     music_info = data.get("music_info") or {}
     music_title = (music_info.get("title") or "").strip()
     music_author = (music_info.get("author") or "").strip()
     if music_title and music_author:
-        music_display = f"{music_title} - {music_author}"
+        music_display = safe_html(f"{music_title} - {music_author}")
     elif music_title:
-        music_display = music_title
+        music_display = safe_html(music_title)
     else:
         music_display = "Original Sound"
 
@@ -302,9 +309,12 @@ def build_video_stats_message(data: Dict[str, Any]) -> str:
 
 def build_profile_analytics_message(username: str, nickname: str, videos: List[Dict[str, Any]]) -> str:
     """Tạo bảng phân tích chuyên sâu tài khoản: ER, Giờ đăng lý tưởng, Ngày đăng tốt nhất, Tần suất."""
+    username_safe = safe_html(username)
+    nickname_safe = safe_html(nickname)
+
     if not videos:
         return (
-            f"📊 <b>Phân tích kênh:</b> @{username}\n"
+            f"📊 <b>Phân tích kênh:</b> @{username_safe}\n"
             f"⚠️ Không thể tải danh sách video của kênh (Tài khoản có thể ở chế độ riêng tư hoặc chưa có video)."
         )
 
@@ -385,7 +395,7 @@ def build_profile_analytics_message(username: str, nickname: str, videos: List[D
             freq_str = f"~{days_per_post:.1f} ngày / video"
 
     lines = [
-        f"📊 <b>Phân tích kênh:</b> @{username} ({nickname})",
+        f"📊 <b>Phân tích kênh:</b> @{username_safe} ({nickname_safe})",
         f"• Lượt xem TB: <code>{avg_views:,}</code> • Tổng view {count} video: <code>{total_views:,}</code>",
         f"• Tương tác kênh (ER): <b>{channel_er:.2f}%</b> (❤️ <code>{total_likes:,}</code> • 💬 <code>{total_comments:,}</code> • 🔄 <code>{total_shares:,}</code> • ⭐ <code>{total_saves:,}</code>)",
         f"• ⏰ <b>Giờ đăng lý tưởng:</b> <code>{best_time_str}</code> ({best_days_str})",
@@ -395,17 +405,20 @@ def build_profile_analytics_message(username: str, nickname: str, videos: List[D
     ]
 
     for i, v in enumerate(videos[:6], 1):
-        v_title = v["title"][:22] + "..." if len(v["title"]) > 22 else (v["title"] or "Video")
-        lines.append(f"{i:02d}. <a href='{v['url']}'>{v_title}</a> (<code>{v['views']:,}</code> • ER: <b>{v.get('er', 0):.1f}%</b>)")
+        raw_title = (v.get("title") or "Video").strip()
+        v_title = raw_title[:22] + "..." if len(raw_title) > 22 else raw_title
+        v_title_safe = safe_html(v_title)
+        v_url = html.escape(v.get("url") or f"https://www.tiktok.com/@{username}/video/{v.get('id', '')}", quote=True)
+        lines.append(f"{i:02d}. <a href='{v_url}'>{v_title_safe}</a> (<code>{v.get('views', 0):,}</code> • ER: <b>{v.get('er', 0):.1f}%</b>)")
 
     return "\n".join(lines)
 
 def build_similar_videos_message(data: Dict[str, Any]) -> str:
     """Tạo bảng gợi ý video tương tự theo thuật toán TikTok (Similar Videos)."""
     meta = data.get("_meta") or {}
-    category = meta.get("category", "Entertainment")
+    category = safe_html(meta.get("category", "Entertainment"))
     keywords = meta.get("keywords") or []
-    tags_str = " ".join([f"#{k}" for k in keywords[:6]]) if keywords else "#fyp #viral"
+    tags_str = safe_html(" ".join([f"#{k}" for k in keywords[:6]])) if keywords else "#fyp #viral"
 
     return (
         f"🔮 <b>Recommendation Signals</b>\n"
@@ -416,10 +429,10 @@ def build_similar_videos_message(data: Dict[str, Any]) -> str:
 def build_user_info_message(data: Dict[str, Any]) -> str:
     """Hiển thị thông tin người dùng (Author Information)."""
     author = data.get("author") or {}
-    user_id = author.get("id", "N/A")
-    unique_id = author.get("unique_id", "user")
-    nickname = author.get("nickname", "Unknown")
-    profile_url = f"https://www.tiktok.com/@{unique_id}"
+    user_id = safe_html(author.get("id", "N/A"))
+    unique_id = safe_html(author.get("unique_id", "user"))
+    nickname = safe_html(author.get("nickname", "Unknown"))
+    profile_url = html.escape(f"https://www.tiktok.com/@{unique_id}", quote=True)
     country = get_country_display(data.get("region"))
 
     return (
@@ -433,11 +446,11 @@ def build_instagram_stats_message(data: Dict[str, Any]) -> str:
     cover_url = data.get("cover")
     preview_tag = f'<a href="{cover_url}">&#8205;</a>' if cover_url else ''
     title = (data.get("title") or "Instagram Media").strip()
-    title_disp = title if len(title) <= 55 else (title[:52] + "...")
+    title_disp = safe_html(title if len(title) <= 55 else (title[:52] + "..."))
 
     author = data.get("author") or {}
-    nickname = author.get("nickname", "Instagram User")
-    unique_id = author.get("unique_id", "instagram")
+    nickname = safe_html(author.get("nickname", "Instagram User"))
+    unique_id = safe_html(author.get("unique_id", "instagram"))
     duration = data.get("duration", 0)
     dur_str = f" • ⏱️ {duration}s" if duration else ""
     w = data.get("width") or 1080
@@ -457,9 +470,9 @@ def build_youtube_stats_message(data: Dict[str, Any]) -> str:
     cover_url = data.get("cover")
     preview_tag = f'<a href="{cover_url}">&#8205;</a>' if cover_url else ''
     title = (data.get("title") or "YouTube Media").strip()
-    title_disp = title if len(title) <= 55 else (title[:52] + "...")
+    title_disp = safe_html(title if len(title) <= 55 else (title[:52] + "..."))
 
-    uploader = data.get("uploader", "YouTube Creator")
+    uploader = safe_html(data.get("uploader", "YouTube Creator"))
     duration = data.get("duration", 0)
     dur_str = f"{duration // 60}:{duration % 60:02d}" if duration >= 60 else f"{duration}s"
     is_4k = data.get("is_4k", False)
@@ -480,8 +493,8 @@ def build_twitter_stats_message(data: Dict[str, Any]) -> str:
     cover_url = data.get("cover")
     preview_tag = f'<a href="{cover_url}">&#8205;</a>' if cover_url else ''
     title = (data.get("title") or "Twitter / X Post").strip()
-    title_disp = title if len(title) <= 55 else (title[:52] + "...")
-    uploader = data.get("uploader", "X User")
+    title_disp = safe_html(title if len(title) <= 55 else (title[:52] + "..."))
+    uploader = safe_html(data.get("uploader", "X User"))
     duration = data.get("duration", 0)
     dur_str = f" • ⏱️ {duration}s" if duration else ""
     likes = format_exact_number(data.get("likes", 0))
@@ -497,8 +510,8 @@ def build_pinterest_stats_message(data: Dict[str, Any]) -> str:
     cover_url = data.get("cover")
     preview_tag = f'<a href="{cover_url}">&#8205;</a>' if cover_url else ''
     title = (data.get("title") or "Pinterest Pin").strip()
-    title_disp = title if len(title) <= 55 else (title[:52] + "...")
-    uploader = data.get("uploader", "Pinterest Creator")
+    title_disp = safe_html(title if len(title) <= 55 else (title[:52] + "..."))
+    uploader = safe_html(data.get("uploader", "Pinterest Creator"))
     is_vid = data.get("is_video", False)
     media_type = "🎬 Video Pin" if is_vid else "🖼️ HD Image"
 
@@ -512,8 +525,8 @@ def build_spotify_stats_message(data: Dict[str, Any]) -> str:
     """Tạo bảng thông tin tải nhạc Spotify MP3 320kbps."""
     cover_url = data.get("cover")
     preview_tag = f'<a href="{cover_url}">&#8205;</a>' if cover_url else ''
-    title = data.get("title", "Spotify Track")
-    artist = data.get("artist", "Spotify Artist")
+    title = safe_html(data.get("title", "Spotify Track"))
+    artist = safe_html(data.get("artist", "Spotify Artist"))
 
     return (
         f"{preview_tag}"
@@ -524,9 +537,9 @@ def build_spotify_stats_message(data: Dict[str, Any]) -> str:
 def build_user_profile_stats_message(user_data: Dict[str, Any]) -> str:
     """Tạo thẻ Profile với số liệu thực tế (Real Numbers) và các cài đặt tương tác."""
     user_id = user_data.get("user_id", 0)
-    full_name = user_data.get("full_name") or "User"
+    full_name = safe_html(user_data.get("full_name") or "User")
     username = user_data.get("username") or ""
-    uname_str = f" (@{username})" if username else ""
+    uname_str = f" (@{safe_html(username)})" if username else ""
     
     total_dl = user_data.get("total_downloads", 0)
     total_ck = user_data.get("total_checks", 0)
