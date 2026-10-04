@@ -184,6 +184,9 @@ def build_video_stats_message(data: Dict[str, Any]) -> str:
     shares_exact = format_exact_number(shares_val)
     collects_exact = format_exact_number(collects_val)
 
+    downloads_val = int(data.get("download_count", 0) or 0)
+    downloads_exact = format_exact_number(downloads_val)
+
     created_date = format_creation_date_gmt0(data.get("create_time"))
     shadowban_status, _ = analyze_shadowban_status(data)
     upload_country = get_country_display(data.get("region"))
@@ -200,18 +203,26 @@ def build_video_stats_message(data: Dict[str, Any]) -> str:
     else:
         music_display = "Âm thanh gốc (Original Audio)"
 
-    audio_direct_link = f"<a href='{music_url}'>Bấm vào đây để nghe/tải nhạc</a>" if music_url else "Âm thanh gắn liền video"
-
-    title_display = title if len(title) <= 55 else (title[:52] + "...")
+    title_display = title if len(title) <= 150 else (title[:147] + "...")
     message = (
         f"{preview_tag}"
         f"🎬 <b>{title_display}</b>\n"
-        f"👤 {nickname} (<code>@{unique_id}</code>) • ⏱️ {duration_str}\n\n"
-        f"👁️ <code>{views_exact}</code>  ❤️ <code>{likes_exact}</code>  💬 <code>{comments_exact}</code>  🔄 <code>{shares_exact}</code>  ⭐ <code>{collects_exact}</code>\n"
-        f"📊 <b>ER: {er:.2f}%</b> ({er_badge}) • Lưu: <code>{save_rate:.1f}%</code> • Share: <code>{share_rate:.1f}%</code>\n"
-        f"📐 <code>{width}×{height}</code> • {codec} • <b>{app_fps:.0f}fps</b> • VQ: <b>{vq_score}/100</b>\n"
-        f"💾 Gốc: <code>{app_size:.1f}MB</code> (HEVC) • Web: <code>{browser_size:.1f}MB</code> (H.264)\n"
-        f"🏷️ {category} • {upload_source}"
+        f"🆔 <code>{video_id}</code> • 👤 {nickname} (<code>@{unique_id}</code>)\n"
+        f"📍 {upload_country} • 📅 <code>{created_date}</code>\n\n"
+        f"📊 <b>TƯƠNG TÁC & THUẬT TOÁN</b>\n"
+        f"• 👁️ <code>{views_exact}</code> • ❤️ <code>{likes_exact}</code> • 💬 <code>{comments_exact}</code> • 🔄 <code>{shares_exact}</code> • ⭐ <code>{collects_exact}</code> • 📥 <code>{downloads_exact}</code>\n"
+        f"• <b>ER: {er:.2f}%</b> ({er_badge}) • Lưu: <code>{save_rate:.1f}%</code> • Share: <code>{share_rate:.1f}%</code>\n\n"
+        f"⚡ <b>THÔNG SỐ STREAM & CHẤT LƯỢNG</b>\n"
+        f"• Độ phân giải: <code>{width}×{height}</code> ({fmt} • {codec})\n"
+        f"• Mobile App: <code>{app_fps:.0f} FPS</code> • <code>{app_bitrate:.2f} Mbps</code> • <code>{app_size:.1f} MB</code> (HEVC Gốc)\n"
+        f"• Web Browser: <code>{browser_fps:.0f} FPS</code> • <code>{browser_bitrate:.2f} Mbps</code> • <code>{browser_size:.1f} MB</code> (H.264)\n"
+        f"• Điểm VQScore: <b>{vq_score}/100</b> — <i>{vq_label}</i>\n\n"
+        f"🎯 <b>PHÂN LOẠI & KIỂM DUYỆT</b>\n"
+        f"• Nguồn upload: <b>{upload_source}</b> • ⏱️ <code>{duration_str}</code>\n"
+        f"• Danh mục: <b>{category}</b>\n"
+        f"• Shadowban: {shadowban_status}\n"
+        f"• Từ khóa: <i>{keywords_str}</i>\n"
+        f"• Âm thanh: 🎵 <i>{music_display}</i>"
     )
     return message
 
