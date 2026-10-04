@@ -117,6 +117,34 @@ def format_duration_detailed(seconds_val: Any) -> str:
     except Exception:
         return "00:00"
 
+def resolve_stream_resolutions(width: int, height: int, fps: float) -> Tuple[str, str, str]:
+    """Tính toán và so sánh chuẩn xác độ phân giải giữa Original, Phone (App) và Browser (Web)."""
+    ratio = width / height if height > 0 else 0.5625
+    fps_int = int(round(fps)) if fps > 0 else 30
+
+    if abs(ratio - (4/3)) < 0.05:
+        orig_res = "1440×1080 (4:3 Master)"
+        app_res = f"576p{fps_int}"
+        web_res = f"576p{fps_int}"
+    elif width > height:
+        orig_res = "1920×1080 (16:9 Master)" if height <= 1080 else f"{width}×{height} (Master)"
+        app_res = f"{height}p{fps_int}"
+        web_res = f"{height}p{fps_int}"
+    elif height >= 1920 or width >= 1080:
+        orig_res = "1080×1920 (Full HD Master)"
+        app_res = f"1080p{fps_int}"
+        web_res = "720p60" if fps_int > 45 else f"720p{fps_int}"
+    elif height >= 1280 or width >= 720:
+        orig_res = "1080×1920 (HD Master)"
+        app_res = f"720p{fps_int}"
+        web_res = f"540p{fps_int}"
+    else:
+        orig_res = f"{width}×{height}"
+        app_res = f"{height}p{fps_int}"
+        web_res = f"{height}p{fps_int}"
+
+    return orig_res, app_res, web_res
+
 def build_video_stats_message(data: Dict[str, Any]) -> str:
     """
     Tạo thông điệp thống kê video hoàn chỉnh với thiết kế mới (Fresh design & Premium Emojis)
@@ -205,6 +233,8 @@ def build_video_stats_message(data: Dict[str, Any]) -> str:
 
     audio_direct_link = f"<a href='{music_url}'>Bấm vào đây để nghe/tải nhạc</a>" if music_url else "Âm thanh gắn liền video"
 
+    orig_res, app_res, web_res = resolve_stream_resolutions(width, height, app_fps)
+
     message = (
         f"{preview_tag}"
         f"👑 <b>TIKTOK-TWEAKS CHECKER</b>\n"
@@ -212,17 +242,17 @@ def build_video_stats_message(data: Dict[str, Any]) -> str:
         f"🎬 <b>{title}</b>\n"
         f"👤 {nickname} (<code>@{unique_id}</code>) • ⏱️ <code>{duration_str}</code>\n"
         f"🆔 <code>{video_id}</code> • 📍 {upload_country} • 📅 <code>{created_date}</code>\n\n"
-        f"📊 <b>TƯƠNG TÁC & THUẬT TOÁN:</b>\n"
+        f"📊 <b>TƯƠNG TÁC (STATISTICS):</b>\n"
         f"• 👁️ <code>{views_exact}</code>  ❤️ <code>{likes_exact}</code>  💬 <code>{comments_exact}</code>  🔄 <code>{shares_exact}</code>  ⭐ <code>{collects_exact}</code>\n"
         f"• Tương tác: <b>ER: {er:.2f}%</b> ({er_badge}) • Lưu: <code>{save_rate:.1f}%</code> • Share: <code>{share_rate:.1f}%</code>\n"
         f"• Trạng thái: {shadowban_status}\n\n"
-        f"⚡ <b>CHẤT LƯỢNG & STREAM:</b>\n"
-        f"• Độ nét: <code>{width}×{height}</code> ({fmt} • {codec})\n"
-        f"• Điểm VQScore: <b>{vq_score}/100</b> — <i>{vq_label}</i>\n"
-        f"• Stream: <code>{app_fps:.1f} FPS</code> • <code>{app_bitrate:.2f} Mbps</code>\n"
-        f"• Dung lượng: <code>{app_size:.1f} MB</code> (Gốc) • <code>{browser_size:.1f} MB</code> (Web)\n\n"
-        f"🏷️ <b>PHÂN LOẠI NỘI DUNG:</b>\n"
-        f"• Nguồn: <b>{upload_source}</b>\n"
+        f"⭐️ <b>ĐỘ PHÂN GIẢI & STREAM (QUALITY):</b>\n"
+        f"• 💎 Original (Gốc): <code>{orig_res}</code>\n"
+        f"• 📱 Phone (App): <code>{app_res}</code> ({codec} • <code>{app_size:.1f} MB</code>)\n"
+        f"• 🌐 Browser (Web): <code>{web_res}</code> (H.264 • <code>{browser_size:.1f} MB</code>)\n"
+        f"• ⚡ Stream Specs: <code>{app_fps:.1f} FPS</code> • <code>{app_bitrate:.2f} Mbps</code> • VQ: <b>{vq_score}/100</b>\n\n"
+        f"🏷️ <b>PHÂN LOẠI & THÔNG TIN:</b>\n"
+        f"• Nguồn đăng: <b>{upload_source}</b>\n"
         f"• Danh mục: <b>{category}</b>\n"
         f"• Từ khóa: <i>{keywords_str}</i>\n"
         f"• Âm thanh: 🎵 <i>{music_display}</i>\n\n"

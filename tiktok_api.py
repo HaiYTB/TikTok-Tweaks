@@ -164,17 +164,21 @@ def parse_mp4_full_metadata(chunk: bytes, file_size: int = 0) -> Dict[str, Any]:
     elif b'avc1' in chunk:
         info["codec"] = "H.264 (AVC)"
 
-    # 2. tkhd (width & height)
-    tkhd_idx = chunk.find(b'tkhd')
-    if tkhd_idx != -1:
-        for offset in [84, 96, 92, 88]:
-            if tkhd_idx + offset <= chunk_len:
-                w = int.from_bytes(chunk[tkhd_idx + offset - 8 : tkhd_idx + offset - 6], 'big')
-                h = int.from_bytes(chunk[tkhd_idx + offset - 4 : tkhd_idx + offset - 2], 'big')
-                if 200 <= w <= 7680 and 200 <= h <= 7680:
-                    info["width"] = w
-                    info["height"] = h
-                    break
+    # 2. tkhd (width & height across all tracks)
+    pos = 0
+    while True:
+        idx = chunk.find(b'tkhd', pos)
+        if idx == -1:
+            break
+        # Fixed point 16.16: integer part is at idx + 80 (2 bytes) for width, idx + 84 (2 bytes) for height
+        if idx + 86 <= chunk_len:
+            w = int.from_bytes(chunk[idx + 80 : idx + 82], 'big')
+            h = int.from_bytes(chunk[idx + 84 : idx + 86], 'big')
+            if 100 <= w <= 7680 and 100 <= h <= 7680:
+                info["width"] = w
+                info["height"] = h
+                break
+        pos = idx + 4
 
     # 3. mdhd (timescale & duration)
     mdhd_idx = chunk.find(b'mdhd')
