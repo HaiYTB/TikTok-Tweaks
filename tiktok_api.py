@@ -110,7 +110,7 @@ def infer_video_category(title: str, hashtags: List[str]) -> str:
     """Xác định danh mục nội dung video theo phân loại thuật toán TikTok."""
     text = (title + " " + " ".join(hashtags)).lower()
     
-    if any(k in text for k in ("game", "gaming", "tối ưu", "máy yếu", "mượt", "fps", "lag", "giật", "gpu", "cpu", "ram", "wuwa", "wuthering", "genshin", "mlbb", "roblox", "pubg", "ff", "free fire", "anime", "manga", "edit", "animation", "minecraft", "play")):
+    if any(k in text for k in ("game", "gaming", "tối ưu", "máy yếu", "mượt", "fps", "lag", "giật", "gpu", "cpu", "ram", "wuwa", "wuthering", "genshin", "mlbb", "roblox", "pubg", "ff", "free fire", "freefire", "garena", "brevent", "modun", "module", "anime", "manga", "edit", "animation", "minecraft", "play")):
         return "🎮 Video Games / Games / Entertainment (Trò chơi & Giải trí)"
     elif any(k in text for k in ("music", "song", "dance", "remix", "nhac", "beat", "audio", "sing", "cover")):
         return "🎵 Music & Performance (Âm nhạc & Vũ đạo)"
