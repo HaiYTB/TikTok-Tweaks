@@ -50,6 +50,26 @@ def init_db():
     )
     """)
 
+    # Bảng lưu kết quả nhận diện nhạc Shazam để nút bấm tải MP3 không bị mất dữ liệu sau khi restart
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS shazam_cache (
+        s_id TEXT PRIMARY KEY,
+        title TEXT,
+        artist TEXT,
+        genres TEXT,
+        cover_url TEXT,
+        shazam_url TEXT,
+        spotify_url TEXT,
+        yt_music_url TEXT,
+        audio_target TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+    try:
+        cursor.execute("ALTER TABLE shazam_cache ADD COLUMN audio_target TEXT")
+    except Exception:
+        pass
+
     conn.commit()
     conn.close()
 
@@ -197,3 +217,34 @@ def update_group_setting(chat_id: int, key: str, value: Any) -> bool:
     conn.commit()
     conn.close()
     return True
+
+def save_shazam_cache(s_id: str, info: Dict[str, Any]) -> None:
+    """Lưu kết quả nhận diện nhạc vào SQLite để hỗ trợ tải MP3 lâu dài."""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("""
+    INSERT OR REPLACE INTO shazam_cache (s_id, title, artist, genres, cover_url, shazam_url, spotify_url, yt_music_url, audio_target)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (
+        s_id,
+        info.get("title", ""),
+        info.get("artist", ""),
+        info.get("genres", ""),
+        info.get("cover_url", ""),
+        info.get("shazam_url", ""),
+        info.get("spotify_url", ""),
+        info.get("yt_music_url", ""),
+        info.get("audio_target", "")
+    ))
+    conn.commit()
+    conn.close()
+
+def get_shazam_cache(s_id: str) -> Optional[Dict[str, Any]]:
+    """Truy xuất kết quả nhận diện nhạc từ SQLite theo ID."""
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM shazam_cache WHERE s_id = ?", (s_id,))
+    row = cursor.fetchone()
+    conn.close()
+    return dict(row) if row else None

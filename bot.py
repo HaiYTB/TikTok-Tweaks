@@ -1437,10 +1437,11 @@ async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TY
 
     # Tải MP3 từ kết quả nhận diện Shazam (hỗ trợ cả short cache ID và legacy text)
     if data_str.startswith("dl_sh_mp3:") or data_str.startswith("dl_shazam_mp3:"):
+        cached_track = {}
         if data_str.startswith("dl_sh_mp3:"):
             s_id = data_str.split(":", 1)[1]
-            cached_track = SHAZAM_CACHE.get(s_id, {})
-            s_title = cached_track.get("title", "Unknown Track")
+            cached_track = SHAZAM_CACHE.get(s_id) or database.get_shazam_cache(s_id) or {}
+            s_title = cached_track.get("title", "")
             s_artist = cached_track.get("artist", "")
         else:
             meta_str = data_str.split(":", 1)[1]
@@ -1448,20 +1449,30 @@ async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TY
             s_title = parts[0]
             s_artist = parts[1] if len(parts) > 1 else ""
 
-        wait_msg = await query.message.reply_text(f"⏳ <b>Đang tìm và tải MP3 320 kbps bài hát '{s_title}'...</b>", parse_mode=constants.ParseMode.HTML)
+        if not s_title or s_title == "Unknown Track":
+            await query.message.reply_text("⚠️ Thông tin bài hát đã hết hạn hoặc không tìm thấy. Vui lòng bấm nhận diện lại qua nút 🎧 Shazam.")
+            return
+
+        display_name = f"{s_title} - {s_artist}" if s_artist else s_title
+        wait_msg = await query.message.reply_text(f"⏳ <b>Đang tìm và tải MP3 320 kbps bài hát '{display_name}'...</b>", parse_mode=constants.ParseMode.HTML)
         unique_id = uuid.uuid4().hex[:8]
         tmp_mp3 = os.path.join(tempfile.gettempdir(), f"shazam_dl_{chat_id}_{unique_id}.mp3")
         try:
-            search_q = f"{s_title} {s_artist}"
+            search_q = f"{s_title} {s_artist}".strip()
             dl_ok, dl_err = await download_mp3_320kbps(search_q, tmp_mp3)
+
+            # Fallback nếu tìm kiếm không ra kết quả: tải trực tiếp âm thanh gốc của video
+            if not dl_ok and cached_track.get("audio_target"):
+                dl_ok, dl_err = await download_mp3_320kbps(cached_track["audio_target"], tmp_mp3)
+
             if dl_ok and os.path.exists(tmp_mp3):
                 with open(tmp_mp3, "rb") as af:
                     await context.bot.send_audio(
                         chat_id=chat_id,
                         audio=af,
                         title=s_title,
-                        performer=s_artist,
-                        caption=f"🎵 <b>{s_title}</b> - <code>{s_artist}</code>\n💎 <b>MP3 320 kbps (Nhận diện bởi Shazam)</b>",
+                        performer=s_artist or "Unknown Artist",
+                        caption=f"🎵 <b>{s_title}</b>{f' - <code>{s_artist}</code>' if s_artist else ''}\n💎 <b>MP3 320 kbps (Nhận diện bởi Shazam)</b>",
                         parse_mode=constants.ParseMode.HTML,
                         read_timeout=180.0,
                         write_timeout=180.0
@@ -1647,6 +1658,7 @@ async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TY
             if os.path.exists(tmp_clip):
                 track_info = await asyncio.to_thread(identify_song_from_path, tmp_clip, 15)
                 if track_info:
+                    track_info["audio_target"] = audio_target
                     database.record_shazam(user_id)
                     card_text, reply_markup = build_shazam_card(track_info)
                     await wait_msg.edit_text(card_text, reply_markup=reply_markup, parse_mode=constants.ParseMode.HTML)

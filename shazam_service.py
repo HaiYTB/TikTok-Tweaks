@@ -4,6 +4,7 @@ import subprocess
 import urllib.parse
 import uuid
 from typing import Optional, Dict, Any, Tuple
+import database
 
 # Bộ nhớ đệm lưu trữ kết quả Shazam theo ID ngắn (tránh lỗi Telegram Button_data_invalid > 64 bytes)
 SHAZAM_CACHE: Dict[str, Dict[str, Any]] = {}
@@ -163,6 +164,10 @@ def build_shazam_card(info: Dict[str, Any]) -> Tuple[str, InlineKeyboardMarkup]:
 
     s_id = uuid.uuid4().hex[:8]
     SHAZAM_CACHE[s_id] = info
+    try:
+        database.save_shazam_cache(s_id, info)
+    except Exception:
+        pass
 
     links_row = []
     if spotify_url:

@@ -1,6 +1,8 @@
 import re
 import os
 import sys
+import shutil
+import subprocess
 import asyncio
 import tempfile
 import urllib.parse
@@ -316,18 +318,47 @@ async def fetch_spotify_track(spotify_url: str) -> Tuple[bool, Optional[Dict[str
     except Exception as e:
         return False, None, f"Lỗi lấy thông tin Spotify: {str(e)}"
 
+def generate_audio_search_candidates(raw_query: str) -> List[str]:
+    """Tạo danh sách các từ khóa tìm kiếm tối ưu từ tiêu đề và nghệ sĩ."""
+    clean_q = re.sub(r'[*_#@!~]', '', raw_query).strip()
+    candidates = [clean_q]
+
+    # Bỏ hậu tố hãng thu âm/kênh media như '& MeMe Media', '& ACV Music', '& Official'
+    no_media = re.sub(r'\s*&\s*[\w\s]*(Media|Music|Records|Entertainment|Official|Audio|Recordings|Channel)\b', '', clean_q, flags=re.IGNORECASE).strip()
+    if no_media and no_media != clean_q:
+        candidates.append(no_media)
+
+    # Tách nghệ sĩ chính nếu có 'feat.', 'ft.', 'x', '&', ','
+    split_artists = re.split(r'(\s+feat\.?\s+|\s+ft\.?\s+|\s+&\s+|\s+x\s+)', no_media or clean_q, flags=re.IGNORECASE)
+    if len(split_artists) > 1 and len(split_artists[0].strip()) > 3:
+        candidates.append(split_artists[0].strip())
+
+    # Thử bỏ phần trong ngoặc tròn / ngoặc vuông như (ZoneH Remix), (Official MV)
+    no_paren = re.sub(r'\(.*?\)|\[.*?\]', '', clean_q).strip()
+    if no_paren and no_paren != clean_q:
+        candidates.append(no_paren)
+        no_paren_media = re.sub(r'\s*&\s*[\w\s]*(Media|Music|Records|Entertainment|Official|Audio)\b', '', no_paren, flags=re.IGNORECASE).strip()
+        if no_paren_media and no_paren_media != no_paren:
+            candidates.append(no_paren_media)
+
+    # Khử trùng lặp từ khóa
+    seen = set()
+    deduped = []
+    for c in candidates:
+        norm = re.sub(r'\s+', ' ', c).strip()
+        if norm and norm.lower() not in seen:
+            seen.add(norm.lower())
+            deduped.append(norm)
+    return deduped
+
 async def download_mp3_320kbps(search_query_or_url: str, save_path: str) -> Tuple[bool, Optional[str]]:
     """
     Tải âm thanh chất lượng cao nhất và chuyển đổi sang chuẩn MP3 320 kbps bằng FFmpeg.
-    Hỗ trợ tìm kiếm từ khóa bài hát hoặc link YouTube/SoundCloud trực tiếp.
+    Hỗ trợ tìm kiếm thông minh nhiều tầng từ khóa hoặc link trực tiếp YouTube/SoundCloud/CDN.
     """
-    def _dl_audio():
-        # Nếu là query chữ, thêm tiền tố ytsearch1
-        target = search_query_or_url
-        if not target.startswith("http://") and not target.startswith("https://"):
-            target = f"ytsearch1:{search_query_or_url} audio"
+    def _dl_audio() -> Tuple[bool, Optional[str]]:
+        is_direct_url = search_query_or_url.startswith("http://") or search_query_or_url.startswith("https://")
 
-        # Tên file gốc trước khi chuyển đổi
         base_path = save_path
         if base_path.endswith(".mp3"):
             base_path = base_path[:-4]
@@ -344,19 +375,60 @@ async def download_mp3_320kbps(search_query_or_url: str, save_path: str) -> Tupl
                 'preferredquality': '320',
             }],
         }
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            ydl.download([target])
 
-        # Đổi tên về đúng save_path nếu cần
-        expected_output = base_path + ".mp3"
-        if os.path.exists(expected_output) and expected_output != save_path:
-            import shutil
-            shutil.move(expected_output, save_path)
+        if is_direct_url:
+            targets = [search_query_or_url]
+        else:
+            candidates = generate_audio_search_candidates(search_query_or_url)
+            targets = [f"ytsearch1:{c}" for c in candidates]
 
-    try:
-        await asyncio.to_thread(_dl_audio)
+        last_err = None
+        for target in targets:
+            try:
+                # Kiểm tra trước xem có bài hát phù hợp không
+                if target.startswith("ytsearch1:"):
+                    with yt_dlp.YoutubeDL({'quiet': True, 'extract_flat': True}) as ydl_check:
+                        chk = ydl_check.extract_info(target, download=False)
+                        entries = chk.get('entries') if chk else None
+                        if entries is not None and len(entries) == 0:
+                            continue
+
+                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                    ydl.download([target])
+
+                expected_output = base_path + ".mp3"
+                if os.path.exists(expected_output):
+                    if expected_output != save_path:
+                        shutil.move(expected_output, save_path)
+                    return True, None
+
+                # Fallback: kiểm tra xem có file audio thô nào được tải về không (.webm, .m4a, .opus)
+                parent_dir = os.path.dirname(save_path) or "."
+                prefix = os.path.basename(base_path)
+                for fname in os.listdir(parent_dir):
+                    if fname.startswith(prefix) and not fname.endswith(".mp3") and not fname.endswith(".part"):
+                        raw_audio = os.path.join(parent_dir, fname)
+                        try:
+                            cmd = [ffmpeg_exe, "-y", "-i", raw_audio, "-vn", "-b:a", "320k", save_path]
+                            subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
+                            if os.path.exists(save_path) and os.path.getsize(save_path) > 0:
+                                try: os.remove(raw_audio)
+                                except Exception: pass
+                                return True, None
+                        except Exception:
+                            pass
+            except Exception as e:
+                last_err = str(e)
+                continue
+
         if os.path.exists(save_path) and os.path.getsize(save_path) > 0:
             return True, None
-        return False, "Không thể chuyển đổi hoặc tải file MP3 320kbps."
+        return False, last_err or "Không tìm thấy nguồn nhạc phù hợp trên các nền tảng."
+
+    try:
+        ok, err = await asyncio.to_thread(_dl_audio)
+        if ok and os.path.exists(save_path) and os.path.getsize(save_path) > 0:
+            return True, None
+        return False, err or "Không thể chuyển đổi hoặc tải file MP3 320kbps."
     except Exception as e:
         return False, f"Lỗi tải MP3 320kbps: {str(e)}"
