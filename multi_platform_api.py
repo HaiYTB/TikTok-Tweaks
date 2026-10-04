@@ -21,7 +21,7 @@ if bin_dir not in os.environ.get("PATH", ""):
 
 # Regular Expressions cho các nền tảng
 TIKTOK_VIDEO_REGEX = re.compile(
-    r'https?://(?:(?:www|m|vt|vm|t)\.)?tiktok\.com/(?:t/[a-zA-Z0-9_-]+|@[^/]+/video/\d+|[a-zA-Z0-9_-]+/?(?:\?[^\s]*)?)',
+    r'https?://(?:(?:www|m|vt|vm|t)\.)?tiktok\.com/(?:t/[a-zA-Z0-9_-]+|@[^/]+/(?:video|photo)/\d+(?:\?[^\s]*)?|[a-zA-Z0-9_-]+/?(?:\?[^\s]*)?)',
     re.IGNORECASE
 )
 

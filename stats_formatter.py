@@ -242,6 +242,37 @@ def build_video_stats_message(data: Dict[str, Any]) -> str:
     else:
         music_display = "Original Sound"
 
+    if meta.get("is_photo_slideshow"):
+        image_count = meta.get("image_count") or len(data.get("images") or [])
+        orig_res = meta.get("orig_res") or "1080×1920 (HD Photo)"
+        codec = meta.get("codec") or "Original Photos (Không Watermark)"
+        est_mb = meta.get("app_size_mb") or round(image_count * 0.2, 1)
+
+        message = (
+            f"{preview_tag}"
+            f"📸 <b>{title}</b>\n"
+            f"👤 {nickname} (<code>@{unique_id}</code>)\n\n"
+            f"ℹ️ <b>Information</b>\n"
+            f"• 🗂 ID | <code>{video_id}</code>\n"
+            f"• ⬇️ Source | {upload_source}\n"
+            f"• 📍 Region | {upload_country}\n"
+            f"• 👻 Shadow ban | {shadowban_display}\n\n"
+            f"📊 <b>Statistics</b>\n"
+            f"• 👁️ <code>{views_exact}</code> • ❤️ <code>{likes_exact}</code> • 💬 <code>{comments_exact}</code> • 🔄 <code>{shares_exact}</code> • ⭐ <code>{collects_exact}</code>\n"
+            f"• ER: <b>{er:.2f}%</b> ({er_badge}) • Lưu: <code>{save_rate:.1f}%</code> • Share: <code>{share_rate:.1f}%</code>\n\n"
+            f"⭐️ <b>Quality</b>\n"
+            f"• 📦 Thể loại | 📸 <b>Album Ảnh TikTok ({image_count} ảnh HD)</b>\n"
+            f"• 📐 Độ phân giải | <code>{orig_res}</code>\n"
+            f"• 🎨 Định dạng | <code>{codec}</code>\n"
+            f"• 💾 Dung lượng ước tính | <code>~{est_mb:.1f} MB</code>\n"
+            f"• 🏆 Điểm chất lượng | <b>95.0/100</b> (Ảnh Master Gốc)\n\n"
+            f"📝 <b>Details</b>\n"
+            f"┃ AI Generated | {ai_gen}\n"
+            f"┃ Category | {category}\n"
+            f"┃ Audio | 🎵 <i>{music_display}</i>"
+        )
+        return message
+
     message = (
         f"{preview_tag}"
         f"🎬 <b>{title}</b>\n"

@@ -6,6 +6,8 @@ import tempfile
 import asyncio
 import uuid
 import urllib.parse
+import zipfile
+import shutil
 from typing import Dict, Any, Optional
 
 # Đảm bảo console Windows hỗ trợ Emoji và tiếng Việt UTF-8
@@ -26,6 +28,7 @@ from telegram import (
     InlineKeyboardMarkup,
     WebAppInfo,
     ChatMemberUpdated,
+    InputMediaPhoto,
     constants
 )
 from telegram.request import HTTPXRequest
@@ -394,7 +397,7 @@ async def check_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
 
     # 1. Kiểm tra nếu là TikTok username (ví dụ: @mihchiet01 hoặc mihchiet01 hoặc link profile tiktok.com/@username)
     username_match = re.search(r'(?:https?://(?:www\.)?tiktok\.com/)?@([a-zA-Z0-9_.-]{3,30})', target_text)
-    is_pure_user = target_text.startswith("@") or ("/video/" not in target_text and "/t/" not in target_text and "/@" in target_text)
+    is_pure_user = target_text.startswith("@") or ("/video/" not in target_text and "/photo/" not in target_text and "/t/" not in target_text and "/@" in target_text)
 
     # Phân loại link media
     media_url, platform = classify_media_url(target_text)
@@ -422,7 +425,7 @@ async def check_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         )
         return
 
-    # 2. Check TikTok Video
+    # 2. Check TikTok Video / Photo
     if platform in ("tiktok_video", "tiktok_music"):
         status_msg = await update.message.reply_text(
             "⏳ <b>Inspecting TikTok stream, decoding MP4 header & VQScore...</b>",
@@ -443,19 +446,34 @@ async def check_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         browser_size_mb = meta.get("browser_size_mb", 0)
 
         tt_msg = build_video_stats_message(data)
-        buttons = [
-            [
-                InlineKeyboardButton(f"📥 Gốc ({app_size_mb:.1f}M)", callback_data=f"dl_tt:original:{video_id}"),
-                InlineKeyboardButton(f"⚡ Web ({browser_size_mb:.1f}M)", callback_data=f"dl_tt:standard:{video_id}"),
-                InlineKeyboardButton("🎵 Nhạc", callback_data=f"dl_tt_audio:{video_id}")
-            ],
-            [
-                InlineKeyboardButton("📁 Doc", callback_data=f"dl_tt_doc:{video_id}"),
-                InlineKeyboardButton("🖼️ Cover", callback_data=f"dl_cover:{video_id}"),
-                InlineKeyboardButton("🎧 Shazam", callback_data=f"shazam_tt:{video_id}"),
-                InlineKeyboardButton("📊 Kênh", callback_data=f"profile:{data.get('author', {}).get('unique_id', '')}")
+        if meta.get("is_photo_slideshow"):
+            image_count = meta.get("image_count") or len(data.get("images") or [])
+            buttons = [
+                [
+                    InlineKeyboardButton(f"📥 Tải {image_count} ảnh", callback_data=f"dl_tt_photos:{video_id}"),
+                    InlineKeyboardButton("📁 Tải file Zip", callback_data=f"dl_tt_zip:{video_id}"),
+                    InlineKeyboardButton("🎵 Nhạc nền", callback_data=f"dl_tt_audio:{video_id}")
+                ],
+                [
+                    InlineKeyboardButton("🎧 Shazam", callback_data=f"shazam_tt:{video_id}"),
+                    InlineKeyboardButton("📊 Kênh", callback_data=f"profile:{data.get('author', {}).get('unique_id', '')}"),
+                    InlineKeyboardButton("❌ Đóng", callback_data=f"close:{video_id}")
+                ]
             ]
-        ]
+        else:
+            buttons = [
+                [
+                    InlineKeyboardButton(f"📥 Gốc ({app_size_mb:.1f}M)", callback_data=f"dl_tt:original:{video_id}"),
+                    InlineKeyboardButton(f"⚡ Web ({browser_size_mb:.1f}M)", callback_data=f"dl_tt:standard:{video_id}"),
+                    InlineKeyboardButton("🎵 Nhạc", callback_data=f"dl_tt_audio:{video_id}")
+                ],
+                [
+                    InlineKeyboardButton("📁 Doc", callback_data=f"dl_tt_doc:{video_id}"),
+                    InlineKeyboardButton("🖼️ Cover", callback_data=f"dl_cover:{video_id}"),
+                    InlineKeyboardButton("🎧 Shazam", callback_data=f"shazam_tt:{video_id}"),
+                    InlineKeyboardButton("📊 Kênh", callback_data=f"profile:{data.get('author', {}).get('unique_id', '')}")
+                ]
+            ]
         await status_msg.edit_text(tt_msg, reply_markup=InlineKeyboardMarkup(buttons), parse_mode=constants.ParseMode.HTML)
         return
 
@@ -701,6 +719,148 @@ async def send_downloaded_media(
         if thumb_file:
             try: thumb_file.close()
             except Exception: pass
+
+async def send_tiktok_photos_album(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    data: Dict[str, Any],
+    status_msg: Optional[Any] = None,
+    as_zip: bool = False
+) -> None:
+    """Tải và gửi trọn bộ ảnh album TikTok (Photo Slideshow) chất lượng gốc (không watermark) dạng Album hoặc file ZIP."""
+    chat_id = update.effective_chat.id
+    user_id = update.effective_user.id if update.effective_user else 0
+    user_settings = database.get_or_create_user(user_id)
+    doc_mode_active = as_zip or (user_settings.get("doc_mode", 0) == 1)
+
+    images = data.get("images") or data.get("_meta", {}).get("images") or []
+    if not images:
+        if status_msg:
+            await status_msg.edit_text("❌ Không tìm thấy danh sách ảnh trong bài đăng này.")
+        return
+
+    video_id = str(data.get("id") or uuid.uuid4().hex[:8])
+    title = (data.get("title") or "TikTok Photos").strip()
+    author_info = data.get("author") or {}
+    author_name = author_info.get("nickname") or "TikTok User"
+    author_id = author_info.get("unique_id") or "user"
+    music_url = (data.get("music_info") or {}).get("play") or data.get("music")
+    music_title = (data.get("music_info") or {}).get("title") or "Soundtrack"
+    music_artist = (data.get("music_info") or {}).get("author") or author_name
+
+    total_imgs = len(images)
+    if status_msg:
+        await status_msg.edit_text(
+            f"⚡ <b>Đang tải {total_imgs} ảnh TikTok chất lượng gốc (Không Watermark)...</b>",
+            parse_mode=constants.ParseMode.HTML
+        )
+
+    temp_dir = tempfile.mkdtemp(prefix=f"tt_photos_{video_id}_")
+    try:
+        tasks = []
+        for idx, img_url in enumerate(images, start=1):
+            target_file = os.path.join(temp_dir, f"photo_{idx:02d}.jpg")
+            tasks.append(download_file_to_path(img_url, target_file, max_size_mb=30))
+
+        await asyncio.gather(*tasks, return_exceptions=True)
+
+        downloaded_paths = []
+        for idx in range(1, total_imgs + 1):
+            p = os.path.join(temp_dir, f"photo_{idx:02d}.jpg")
+            if os.path.exists(p) and os.path.getsize(p) > 0:
+                downloaded_paths.append(p)
+
+        if not downloaded_paths:
+            if status_msg:
+                await status_msg.edit_text("❌ Không thể tải hình ảnh từ máy chủ TikTok.")
+            return
+
+        if doc_mode_active:
+            zip_filename = f"TikTok_{video_id}_Photos.zip"
+            zip_path = os.path.join(temp_dir, zip_filename)
+            with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
+                for fp in downloaded_paths:
+                    zf.write(fp, arcname=os.path.basename(fp))
+
+            caption = (
+                f"📁 <b>Trọn bộ {len(downloaded_paths)} ảnh TikTok (Original HD)</b>\n"
+                f"👤 <b>Tác giả:</b> {author_name} (<code>@{author_id}</code>)\n"
+                f"🎬 {title[:200]}\n"
+                f"🤖 <i>Tải bởi TikTok-Tweaks Bot</i>"
+            )
+            with open(zip_path, "rb") as zf_file:
+                await context.bot.send_document(
+                    chat_id=chat_id,
+                    document=zf_file,
+                    caption=caption,
+                    filename=zip_filename,
+                    parse_mode=constants.ParseMode.HTML,
+                    read_timeout=120.0,
+                    write_timeout=120.0
+                )
+        else:
+            def _chunks(lst, n):
+                for i in range(0, len(lst), n):
+                    yield lst[i:i + n]
+
+            file_chunks = list(_chunks(downloaded_paths, 10))
+            for c_idx, chunk in enumerate(file_chunks):
+                media_list = []
+                for f_idx, fp in enumerate(chunk):
+                    with open(fp, "rb") as pf:
+                        img_bytes = pf.read()
+
+                    if c_idx == 0 and f_idx == 0:
+                        cap = (
+                            f"📸 <b>{title[:180]}</b>\n"
+                            f"👤 <b>{author_name}</b> (<code>@{author_id}</code>) • <i>{len(downloaded_paths)} ảnh HD</i>\n"
+                            f"🤖 <i>Tải bởi TikTok-Tweaks Bot</i>"
+                        )
+                        media_list.append(InputMediaPhoto(media=img_bytes, caption=cap, parse_mode=constants.ParseMode.HTML))
+                    elif f_idx == 0:
+                        start_num = c_idx * 10 + 1
+                        end_num = min((c_idx + 1) * 10, len(downloaded_paths))
+                        cap = f"📸 <i>Ảnh {start_num}-{end_num}/{len(downloaded_paths)}</i>"
+                        media_list.append(InputMediaPhoto(media=img_bytes, caption=cap, parse_mode=constants.ParseMode.HTML))
+                    else:
+                        media_list.append(InputMediaPhoto(media=img_bytes))
+
+                await context.bot.send_media_group(
+                    chat_id=chat_id,
+                    media=media_list,
+                    read_timeout=120.0,
+                    write_timeout=120.0
+                )
+
+        if music_url:
+            tmp_audio = os.path.join(temp_dir, f"audio_{video_id}.mp3")
+            m_ok, _ = await download_file_to_path(music_url, tmp_audio, max_size_mb=30)
+            if m_ok and os.path.exists(tmp_audio):
+                with open(tmp_audio, "rb") as af:
+                    await context.bot.send_audio(
+                        chat_id=chat_id,
+                        audio=af,
+                        title=music_title,
+                        performer=music_artist,
+                        caption=f"🎵 <b>Nhạc nền Album:</b> {music_title} - {music_artist}\n🤖 <i>TikTok-Tweaks</i>",
+                        parse_mode=constants.ParseMode.HTML,
+                        read_timeout=60.0,
+                        write_timeout=60.0
+                    )
+
+        database.record_download(user_id, "tiktok")
+        if status_msg:
+            try:
+                await status_msg.delete()
+            except Exception:
+                pass
+
+    except Exception as e:
+        logger.error(f"Lỗi gửi album ảnh TikTok: {e}")
+        if status_msg:
+            await status_msg.edit_text(f"❌ Lỗi gửi ảnh: {str(e)}")
+    finally:
+        shutil.rmtree(temp_dir, ignore_errors=True)
 
 # ==============================================================
 # Main Message Handler (Multi-Platform Link Processor)
@@ -1055,6 +1215,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
     # Nếu ở chế độ Downloader hoặc trong group có auto_download bật
     if user_mode == "downloader" or (is_group and group_settings.get("auto_download", 1)):
+        if meta.get("is_photo_slideshow"):
+            await send_tiktok_photos_album(update, context, data, status_msg=status_msg)
+            return
+
         await status_msg.edit_text("⚡ <b>Đang tải video TikTok chất lượng gốc (Original HD)...</b>", parse_mode=constants.ParseMode.HTML)
         tmp_tt = os.path.join(tempfile.gettempdir(), f"tt_{chat_id}_{video_id}.mp4")
         thumb_tt = os.path.join(tempfile.gettempdir(), f"thumb_{chat_id}_{video_id}.jpg")
@@ -1085,19 +1249,34 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
     # Chế độ Hybrid hoặc Checker: hiển thị card đầy đủ (2 hàng nút gọn gàng)
     tt_msg = build_video_stats_message(data)
-    buttons = [
-        [
-            InlineKeyboardButton(f"📥 Gốc ({app_size_mb:.1f}M)", callback_data=f"dl_tt:original:{video_id}"),
-            InlineKeyboardButton(f"⚡ Web ({browser_size_mb:.1f}M)", callback_data=f"dl_tt:standard:{video_id}"),
-            InlineKeyboardButton("🎵 Nhạc", callback_data=f"dl_tt_audio:{video_id}")
-        ],
-        [
-            InlineKeyboardButton("📁 Doc", callback_data=f"dl_tt_doc:{video_id}"),
-            InlineKeyboardButton("🖼️ Cover", callback_data=f"dl_cover:{video_id}"),
-            InlineKeyboardButton("🎧 Shazam", callback_data=f"shazam_tt:{video_id}"),
-            InlineKeyboardButton("📊 Kênh", callback_data=f"profile:{data.get('author', {}).get('unique_id', '')}")
+    if meta.get("is_photo_slideshow"):
+        image_count = meta.get("image_count") or len(data.get("images") or [])
+        buttons = [
+            [
+                InlineKeyboardButton(f"📥 Tải {image_count} ảnh", callback_data=f"dl_tt_photos:{video_id}"),
+                InlineKeyboardButton("📁 Tải file Zip", callback_data=f"dl_tt_zip:{video_id}"),
+                InlineKeyboardButton("🎵 Nhạc nền", callback_data=f"dl_tt_audio:{video_id}")
+            ],
+            [
+                InlineKeyboardButton("🎧 Shazam", callback_data=f"shazam_tt:{video_id}"),
+                InlineKeyboardButton("📊 Kênh", callback_data=f"profile:{data.get('author', {}).get('unique_id', '')}"),
+                InlineKeyboardButton("❌ Đóng", callback_data=f"close:{video_id}")
+            ]
         ]
-    ]
+    else:
+        buttons = [
+            [
+                InlineKeyboardButton(f"📥 Gốc ({app_size_mb:.1f}M)", callback_data=f"dl_tt:original:{video_id}"),
+                InlineKeyboardButton(f"⚡ Web ({browser_size_mb:.1f}M)", callback_data=f"dl_tt:standard:{video_id}"),
+                InlineKeyboardButton("🎵 Nhạc", callback_data=f"dl_tt_audio:{video_id}")
+            ],
+            [
+                InlineKeyboardButton("📁 Doc", callback_data=f"dl_tt_doc:{video_id}"),
+                InlineKeyboardButton("🖼️ Cover", callback_data=f"dl_cover:{video_id}"),
+                InlineKeyboardButton("🎧 Shazam", callback_data=f"shazam_tt:{video_id}"),
+                InlineKeyboardButton("📊 Kênh", callback_data=f"profile:{data.get('author', {}).get('unique_id', '')}")
+            ]
+        ]
     await status_msg.edit_text(tt_msg, reply_markup=InlineKeyboardMarkup(buttons), parse_mode=constants.ParseMode.HTML)
 
 # ==============================================================
@@ -1273,6 +1452,32 @@ async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TY
     # Media Download Callback Handlers
     # ==============================================================
 
+    # Tải Album Ảnh TikTok (Media Group)
+    if data_str.startswith("dl_tt_photos:"):
+        video_id = data_str.split(":", 1)[1]
+        cached = MEDIA_CACHE.get(video_id)
+        if not cached:
+            await query.message.reply_text("⚠️ Dữ liệu album ảnh đã hết hạn. Vui lòng gửi lại link.")
+            return
+
+        data = cached["data"]
+        wait_msg = await query.message.reply_text("⏳ <b>Đang tải trọn bộ ảnh TikTok chất lượng gốc...</b>", parse_mode=constants.ParseMode.HTML)
+        await send_tiktok_photos_album(update, context, data, status_msg=wait_msg, as_zip=False)
+        return
+
+    # Tải Album Ảnh TikTok dưới dạng ZIP (Document)
+    if data_str.startswith("dl_tt_zip:"):
+        video_id = data_str.split(":", 1)[1]
+        cached = MEDIA_CACHE.get(video_id)
+        if not cached:
+            await query.message.reply_text("⚠️ Dữ liệu album ảnh đã hết hạn. Vui lòng gửi lại link.")
+            return
+
+        data = cached["data"]
+        wait_msg = await query.message.reply_text("⏳ <b>Đang đóng gói file ZIP trọn bộ ảnh...</b>", parse_mode=constants.ParseMode.HTML)
+        await send_tiktok_photos_album(update, context, data, status_msg=wait_msg, as_zip=True)
+        return
+
     # Tải TikTok Video (Original / Standard / Document)
     if data_str.startswith("dl_tt:") or data_str.startswith("dl_tt_doc:"):
         is_doc = data_str.startswith("dl_tt_doc:")
@@ -1283,6 +1488,11 @@ async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TY
             return
 
         data = cached["data"]
+        if data.get("_meta", {}).get("is_photo_slideshow"):
+            wait_msg = await query.message.reply_text("⏳ <b>Đang tải album ảnh TikTok...</b>", parse_mode=constants.ParseMode.HTML)
+            await send_tiktok_photos_album(update, context, data, status_msg=wait_msg, as_zip=is_doc)
+            return
+
         quality = "original" if is_doc else data_str.split(":")[1]
         wait_msg = await query.message.reply_text(f"⏳ <b>Đang tải video TikTok ({quality.upper()})...</b>", parse_mode=constants.ParseMode.HTML)
 
@@ -1718,19 +1928,34 @@ async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TY
             app_size_mb = meta.get("app_size_mb", 0)
             browser_size_mb = meta.get("browser_size_mb", 0)
 
-            keyboard = [
-                [
-                    InlineKeyboardButton(f"📥 Gốc ({app_size_mb:.1f}M)", callback_data=f"dl_tt:original:{video_id}"),
-                    InlineKeyboardButton(f"⚡ Web ({browser_size_mb:.1f}M)", callback_data=f"dl_tt:standard:{video_id}"),
-                    InlineKeyboardButton("🎵 Nhạc", callback_data=f"dl_tt_audio:{video_id}")
-                ],
-                [
-                    InlineKeyboardButton("📁 Doc", callback_data=f"dl_tt_doc:{video_id}"),
-                    InlineKeyboardButton("🖼️ Cover", callback_data=f"dl_cover:{video_id}"),
-                    InlineKeyboardButton("🎧 Shazam", callback_data=f"shazam_tt:{video_id}"),
-                    InlineKeyboardButton("📊 Kênh", callback_data=f"profile:{new_data.get('author', {}).get('unique_id', '')}")
+            if meta.get("is_photo_slideshow"):
+                image_count = meta.get("image_count") or len(new_data.get("images") or [])
+                keyboard = [
+                    [
+                        InlineKeyboardButton(f"📥 Tải {image_count} ảnh", callback_data=f"dl_tt_photos:{video_id}"),
+                        InlineKeyboardButton("📁 Tải file Zip", callback_data=f"dl_tt_zip:{video_id}"),
+                        InlineKeyboardButton("🎵 Nhạc nền", callback_data=f"dl_tt_audio:{video_id}")
+                    ],
+                    [
+                        InlineKeyboardButton("🎧 Shazam", callback_data=f"shazam_tt:{video_id}"),
+                        InlineKeyboardButton("📊 Kênh", callback_data=f"profile:{new_data.get('author', {}).get('unique_id', '')}"),
+                        InlineKeyboardButton("❌ Đóng", callback_data=f"close:{video_id}")
+                    ]
                 ]
-            ]
+            else:
+                keyboard = [
+                    [
+                        InlineKeyboardButton(f"📥 Gốc ({app_size_mb:.1f}M)", callback_data=f"dl_tt:original:{video_id}"),
+                        InlineKeyboardButton(f"⚡ Web ({browser_size_mb:.1f}M)", callback_data=f"dl_tt:standard:{video_id}"),
+                        InlineKeyboardButton("🎵 Nhạc", callback_data=f"dl_tt_audio:{video_id}")
+                    ],
+                    [
+                        InlineKeyboardButton("📁 Doc", callback_data=f"dl_tt_doc:{video_id}"),
+                        InlineKeyboardButton("🖼️ Cover", callback_data=f"dl_cover:{video_id}"),
+                        InlineKeyboardButton("🎧 Shazam", callback_data=f"shazam_tt:{video_id}"),
+                        InlineKeyboardButton("📊 Kênh", callback_data=f"profile:{new_data.get('author', {}).get('unique_id', '')}")
+                    ]
+                ]
             await query.edit_message_text(new_msg, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode=constants.ParseMode.HTML)
         else:
             await query.edit_message_text("❌ Không thể quét lại dữ liệu video vào lúc này.")
