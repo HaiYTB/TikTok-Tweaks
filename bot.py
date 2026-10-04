@@ -120,7 +120,9 @@ def get_caption_text(title: str, author_name: str, platform_name: str, user_sett
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Lệnh /start: Chào mừng và menu điều hướng (hỗ trợ cả nhóm chat & tin nhắn riêng)."""
-    if not update.effective_chat or not update.message:
+    if not update.effective_chat:
+        return
+    if not update.message and not update.callback_query:
         return
 
     is_group = update.effective_chat.type in (constants.ChatType.GROUP, constants.ChatType.SUPERGROUP)
@@ -144,7 +146,10 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
                 InlineKeyboardButton("⚙️ Cài đặt nhóm", callback_data="group_settings_menu")
             ]
         ]
-        await update.message.reply_text(group_text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode=constants.ParseMode.HTML)
+        if update.callback_query:
+            await update.callback_query.edit_message_text(group_text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode=constants.ParseMode.HTML)
+        elif update.message:
+            await update.message.reply_text(group_text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode=constants.ParseMode.HTML)
         return
 
     # Giao diện /start trong tin nhắn riêng
@@ -165,11 +170,18 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
             InlineKeyboardButton("📖 Hướng dẫn", callback_data="help_menu")
         ]
     ]
-    await update.message.reply_text(
-        welcome_text,
-        reply_markup=InlineKeyboardMarkup(keyboard),
-        parse_mode=constants.ParseMode.HTML
-    )
+    if update.callback_query:
+        await update.callback_query.edit_message_text(
+            welcome_text,
+            reply_markup=InlineKeyboardMarkup(keyboard),
+            parse_mode=constants.ParseMode.HTML
+        )
+    elif update.message:
+        await update.message.reply_text(
+            welcome_text,
+            reply_markup=InlineKeyboardMarkup(keyboard),
+            parse_mode=constants.ParseMode.HTML
+        )
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Lệnh /help: Hướng dẫn sử dụng chi tiết tất cả nền tảng."""
@@ -191,8 +203,10 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         "<b>Music Recognition (Shazam)</b>\n"
         "Forward or send any voice message, circular video note, or video clip directly to the chat."
     )
-    keyboard = [[InlineKeyboardButton("⬅️ Back", callback_data="back_to_start")]]
-    if update.message:
+    keyboard = [[InlineKeyboardButton("⬅️ Quay lại", callback_data="back_to_start")]]
+    if update.callback_query:
+        await update.callback_query.edit_message_text(help_text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode=constants.ParseMode.HTML)
+    elif update.message:
         await update.message.reply_text(help_text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode=constants.ParseMode.HTML)
 
 async def mode_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -215,7 +229,9 @@ async def mode_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         ],
         [InlineKeyboardButton("⬅️ Quay lại", callback_data="back_to_start")]
     ]
-    if update.message:
+    if update.callback_query:
+        await update.callback_query.edit_message_text(mode_text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode=constants.ParseMode.HTML)
+    elif update.message:
         await update.message.reply_text(mode_text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode=constants.ParseMode.HTML)
 
 async def settings_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -243,9 +259,12 @@ async def settings_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -
             InlineKeyboardButton(f"📝 Chữ: {caption_mode}", callback_data="cycle_opt:caption_mode"),
             InlineKeyboardButton("🔀 Chế độ", callback_data="mode_menu"),
             InlineKeyboardButton("📱 Profile", callback_data=f"user_profile:{user_id}")
-        ]
+        ],
+        [InlineKeyboardButton("⬅️ Quay lại", callback_data="back_to_start")]
     ]
-    if update.message:
+    if update.callback_query:
+        await update.callback_query.edit_message_text(settings_text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode=constants.ParseMode.HTML)
+    elif update.message:
         await update.message.reply_text(settings_text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode=constants.ParseMode.HTML)
 
 async def profile_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -319,22 +338,27 @@ async def group_settings_command(update: Update, context: ContextTypes.DEFAULT_T
         ],
         [InlineKeyboardButton("❌ Đóng", callback_data="close_box")]
     ]
-    if update.message:
+    if update.callback_query:
+        await update.callback_query.edit_message_text(msg, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode=constants.ParseMode.HTML)
+    elif update.message:
         await update.message.reply_text(msg, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode=constants.ParseMode.HTML)
 
 async def shazam_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Lệnh /shazam: Hướng dẫn nhận diện nhạc."""
     text = (
-        "🎧 <b>Shazam Music Recognition</b>\n\n"
-        "Identify music from any audio or video source:\n\n"
-        "1. 🎤 <b>Voice Message:</b> Record audio or hum a melody and send it.\n"
-        "2. 📹 <b>Video Note / Video Clip:</b> Forward or upload any video containing music.\n"
-        "3. 🎵 <b>Audio File:</b> Send an MP3, AAC, or voice clip.\n"
-        "4. 🎬 <b>Interactive Button:</b> Click '🎧 Shazam' on any video inspector card.\n\n"
-        "<i>Includes direct links to Spotify, Apple Music, YouTube Music, and 320 kbps MP3 download!</i>"
+        "🎧 <b>Nhận diện nhạc với Shazam</b>\n\n"
+        "Nhận diện bài hát từ bất kỳ nguồn âm thanh hay video nào:\n\n"
+        "1. 🎤 <b>Tin nhắn thoại (Voice):</b> Ghi âm hoặc ngâm nga giai điệu rồi gửi vào bot.\n"
+        "2. 📹 <b>Video / Video tròn:</b> Chuyển tiếp (forward) hoặc tải lên bất kỳ video nào có chứa nhạc.\n"
+        "3. 🎵 <b>File âm thanh:</b> Gửi file MP3, AAC, M4A.\n"
+        "4. 🎬 <b>Nút tương tác:</b> Bấm '🎧 Shazam' trên bất kỳ thẻ kiểm tra video TikTok/YouTube.\n\n"
+        "<i>Tự động cung cấp link nghe trên Spotify, Apple Music, YouTube Music và tải MP3 320 kbps!</i>"
     )
-    if update.message:
-        await update.message.reply_text(text, parse_mode=constants.ParseMode.HTML)
+    keyboard = [[InlineKeyboardButton("⬅️ Quay lại", callback_data="back_to_start")]]
+    if update.callback_query:
+        await update.callback_query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode=constants.ParseMode.HTML)
+    elif update.message:
+        await update.message.reply_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode=constants.ParseMode.HTML)
 
 async def check_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Lệnh /check [url/@username]: Phân tích chuyên sâu thông số video, codec, bitrate, VQScore, tài khoản."""
@@ -1119,18 +1143,15 @@ async def handle_callback_query(update: Update, context: ContextTypes.DEFAULT_TY
     if data_str == "check_help":
         help_msg = (
             "🔍 <b>Video & Creator Inspector</b>\n\n"
-            "Analyze video streams, MP4 headers, real codecs, bitrates, and creator metrics.\n\n"
-            "<b>Usage:</b>\n"
-            "• <code>/check &lt;TikTok/YouTube/IG Link&gt;</code>\n"
-            "• <code>/check @username</code> (Analyze creator's last 12 videos)\n"
-            "• Reply to any message containing a link with <code>/check</code>\n\n"
-            "<b>Supported Platforms:</b>\n"
-            "• <b>TikTok:</b> Full VQScore, 120 FPS, H.265/H.264 streams, exact counts\n"
-            "• <b>TikTok Accounts:</b> 12-video performance analytics & engagement rate\n"
-            "• <b>YouTube:</b> 4K check, stream formats, duration, views\n"
-            "• <b>Instagram:</b> Reels resolution, audio, interaction stats"
+            "Phân tích chuyên sâu thông số video, codec thực tế, bitrate, VQScore và thống kê kênh.\n\n"
+            "<b>Cách sử dụng:</b>\n"
+            "• Gửi link trực tiếp hoặc dùng <code>/check &lt;Link&gt;</code>\n"
+            "• Dùng <code>/check @username</code> để phân tích 12 video gần nhất của kênh\n"
+            "• Reply tin nhắn có chứa link bằng lệnh <code>/check</code>\n\n"
+            "<b>Hỗ trợ:</b> TikTok, YouTube, Instagram, X (Twitter), Pinterest, Spotify."
         )
-        await query.message.reply_text(help_msg, parse_mode=constants.ParseMode.HTML)
+        keyboard = [[InlineKeyboardButton("⬅️ Quay lại", callback_data="back_to_start")]]
+        await query.edit_message_text(help_msg, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode=constants.ParseMode.HTML)
         return
     if data_str == "group_settings_menu":
         await group_settings_command(update, context)

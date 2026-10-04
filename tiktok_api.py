@@ -161,6 +161,34 @@ def calculate_original_resolution(w: int, h: int) -> str:
     else:
         return "1080×1080"
 
+def get_aspect_ratio_label(w: int, h: int) -> str:
+    """Xác định tỷ lệ khung hình chuẩn xác của video."""
+    if w <= 0 or h <= 0:
+        return "9:16 (Chuẩn dọc TikTok)"
+    r = w / h
+    if abs(r - (20/9)) < 0.1:
+        return "20:9 (Quay màn hình Gaming)"
+    elif abs(r - (19.5/9)) < 0.08:
+        return "19.5:9 (Màn hình iPhone ngang)"
+    elif abs(r - (18/9)) < 0.08:
+        return "18:9 (2:1 Widescreen)"
+    elif abs(r - (16/9)) < 0.08:
+        return "16:9 (Màn hình ngang chuẩn)"
+    elif abs(r - (4/3)) < 0.08:
+        return "4:3 (iPad / Tablet)"
+    elif abs(r - (9/20)) < 0.1:
+        return "9:20 (Dọc Full tràn viền)"
+    elif abs(r - (9/19.5)) < 0.08:
+        return "9:19.5 (Chuẩn iPhone dọc)"
+    elif abs(r - (9/16)) < 0.08:
+        return "9:16 (Chuẩn dọc TikTok)"
+    elif abs(r - (3/4)) < 0.08:
+        return "3:4 (Chuẩn dọc Portrait)"
+    elif abs(r - 1.0) < 0.05:
+        return "1:1 (Vuông Square)"
+    else:
+        return f"{w}:{h}"
+
 def format_stream_blocks(bitrate_info: List[Dict[str, Any]], play_url: str = "", hd_url: str = "") -> List[str]:
     """Tạo các khối link và thông số stream (play_addr, normal_540_0, adapt_540_1, etc.)."""
     blocks = []
@@ -431,12 +459,13 @@ async def _fetch_tikwm_api(url: str, original_url: str) -> Tuple[bool, Optional[
 async def fetch_tiktok_video(tiktok_url: str) -> Tuple[bool, Optional[Dict[str, Any]], Optional[str]]:
     """Gọi API TikWM kết hợp đồng thời trích xuất metadata TikTok SSR để tính toán đầy đủ thông số Checker."""
     resolved_url = await resolve_tiktok_shortlink(tiktok_url)
+    clean_url = re.sub(r'\?.*$', '', resolved_url)
 
     # Chạy song song TikWM và yt-dlp SSR hook để tối ưu tốc độ
     tikwm_task = asyncio.create_task(_fetch_tikwm_api(resolved_url, tiktok_url))
-    adv_task = asyncio.create_task(asyncio.to_thread(extract_tiktok_advanced_sync, resolved_url))
+    adv_task = asyncio.create_task(asyncio.to_thread(extract_tiktok_advanced_sync, clean_url))
 
-    done, pending = await asyncio.wait([tikwm_task, adv_task], timeout=6.0)
+    done, pending = await asyncio.wait([tikwm_task, adv_task], timeout=12.0)
     for p in pending:
         p.cancel()
 
@@ -473,11 +502,12 @@ async def fetch_tiktok_video(tiktok_url: str) -> Tuple[bool, Optional[Dict[str, 
     # Tính điểm VQScore từ thuật toán
     bot_vq_score, vq_label = calculate_vqscore(app_bitrate, width, height, app_fps)
 
-    # Trích xuất VQScore từ TikTok AI (nếu có, ví dụ 74.82)
+    # Trích xuất VQScore từ TikTok AI (nếu có, ví dụ 74.82 hoặc 0)
     tiktok_vq_score = adv_meta.get("tiktok_vq_score")
 
-    # Tính độ phân giải Original Master
+    # Tính độ phân giải Original Master & Tỷ lệ khung hình
     orig_res = calculate_original_resolution(width, height)
+    aspect_ratio_str = get_aspect_ratio_label(width, height)
 
     # Khối link stream chi tiết (H.264 & HEVC)
     bitrate_info = adv_meta.get("bitrate_info") or []
@@ -513,6 +543,7 @@ async def fetch_tiktok_video(tiktok_url: str) -> Tuple[bool, Optional[Dict[str, 
         "width": width,
         "height": height,
         "orig_res": orig_res,
+        "aspect_ratio_str": aspect_ratio_str,
         "browser_res": browser_res,
         "phone_res": phone_res,
         "duration_sec": duration_val,

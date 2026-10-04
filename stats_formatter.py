@@ -208,6 +208,11 @@ def build_video_stats_message(data: Dict[str, Any]) -> str:
     browser_res = meta.get("browser_res") or "576p30"
     phone_res = meta.get("phone_res") or "576p30"
     orig_res = meta.get("orig_res") or "1080×1920"
+    aspect_ratio_str = meta.get("aspect_ratio_str") or "9:16 (Chuẩn dọc TikTok)"
+
+    app_bitrate = meta.get("app_bitrate_mbps", 0.0)
+    bitrate_kbps = int(round(app_bitrate * 1000))
+    bitrate_str = f"{app_bitrate:.2f} Mbps ({bitrate_kbps:,} kbps)" if app_bitrate > 0 else "Không xác định"
 
     stream_blocks = meta.get("stream_blocks") or []
     if stream_blocks:
@@ -215,16 +220,13 @@ def build_video_stats_message(data: Dict[str, Any]) -> str:
     else:
         codec = meta.get("codec", "H.264 (AVC)")
         app_size = meta.get("app_size_mb", 0.0)
-        app_bitrate = meta.get("app_bitrate_mbps", 0.0)
         stream_content = f"🌐📱 play_addr\n{phone_res} • {app_bitrate:.1f} MBps • {codec} • {app_size:.1f} MB\n"
 
-    # Dual VQScore display
+    # Dual VQScore display - luôn luôn hiển thị cả 2 bên (TikTok AI và Thuật toán)
     tiktok_vq = meta.get("tiktok_vq_score")
     bot_vq = meta.get("bot_vq_score") or meta.get("vq_score", 77.7)
-    if tiktok_vq is not None:
-        vq_str = f"<b>{tiktok_vq}</b> (TikTok AI) • <b>{bot_vq}/100</b> (Thuật toán)"
-    else:
-        vq_str = f"<b>{bot_vq}/100</b> (Thuật toán)"
+    tiktok_val_str = str(tiktok_vq) if (tiktok_vq is not None and str(tiktok_vq).strip() != "") else "0"
+    vq_str = f"<b>{tiktok_val_str}</b> (TikTok AI) • <b>{bot_vq}/100</b> (Thuật toán)"
 
     # Details
     ai_gen = "Yes" if meta.get("is_aigc") else "No"
@@ -253,6 +255,8 @@ def build_video_stats_message(data: Dict[str, Any]) -> str:
         f"• 👁️ <code>{views_exact}</code> • ❤️ <code>{likes_exact}</code> • 💬 <code>{comments_exact}</code> • 🔄 <code>{shares_exact}</code> • ⭐ <code>{collects_exact}</code>\n"
         f"• ER: <b>{er:.2f}%</b> ({er_badge}) • Lưu: <code>{save_rate:.1f}%</code> • Share: <code>{share_rate:.1f}%</code>\n\n"
         f"⭐️ <b>Quality</b>\n"
+        f"• 📐 Tỉ lệ | <code>{aspect_ratio_str}</code>\n"
+        f"• ⚡ Bitrate | <code>{bitrate_str}</code>\n"
         f"• 🌐 Browser | <code>{browser_res}</code>\n"
         f"• 📱 Phone | <code>{phone_res}</code>\n"
         f"{stream_content}"
