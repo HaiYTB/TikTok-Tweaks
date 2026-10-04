@@ -1,4 +1,5 @@
 import re
+import json
 import aiohttp
 import asyncio
 import os
@@ -123,22 +124,173 @@ def infer_video_category(title: str, hashtags: List[str]) -> str:
     
     return "🎬 General Entertainment (Giải trí Đa phương tiện)"
 
-def infer_upload_source(data: Dict[str, Any], meta: Dict[str, Any]) -> str:
-    """Xác định nguồn xuất bản video (Upload Source Category)."""
+def calculate_original_resolution(w: int, h: int) -> str:
+    """Tính toán độ phân giải gốc của thiết bị quay/dựng (Original Master)."""
+    if w <= 0 or h <= 0:
+        return "1080×1920"
+    ratio = w / h
+    # Landscape (màn hình ngang)
+    if w > h:
+        if abs(ratio - (20/9)) < 0.1:  # 2.22 chuẩn quay màn hình Gaming (Samsung/Xiaomi)
+            return "1920×864"
+        elif abs(ratio - (19.5/9)) < 0.08:  # 2.16 iPhone landscape
+            return "1920×886"
+        elif abs(ratio - (18/9)) < 0.08:  # 2.0
+            return "1920×960"
+        elif abs(ratio - (16/9)) < 0.08:  # 1.777 chuẩn 16:9
+            return "1920×1080"
+        elif abs(ratio - (4/3)) < 0.08:  # 1.333 iPad / Tablet
+            return "1440×1080"
+        else:
+            scale = 1920 / w if w < 1920 else 1.0
+            return f"{int(round(w * scale))}×{int(round(h * scale))}"
+    # Portrait (màn hình dọc)
+    elif h > w:
+        inv_ratio = h / w
+        if abs(inv_ratio - (20/9)) < 0.1:
+            return "864×1920"
+        elif abs(inv_ratio - (19.5/9)) < 0.08:
+            return "886×1920"
+        elif abs(inv_ratio - (16/9)) < 0.08:
+            return "1080×1920"
+        elif abs(inv_ratio - (4/3)) < 0.08:
+            return "1080×1440"
+        else:
+            scale = 1920 / h if h < 1920 else 1.0
+            return f"{int(round(w * scale))}×{int(round(h * scale))}"
+    else:
+        return "1080×1080"
+
+def format_stream_blocks(bitrate_info: List[Dict[str, Any]], play_url: str = "", hd_url: str = "") -> List[str]:
+    """Tạo các khối link và thông số stream (play_addr, normal_540_0, adapt_540_1, etc.)."""
+    blocks = []
+    for b in bitrate_info:
+        gear_name = b.get("GearName") or "stream"
+        codec_raw = (b.get("CodecType") or "").lower()
+        codec = "hevc" if any(x in codec_raw for x in ["h265", "bytevc1", "hevc"]) else "h264"
+        
+        play_addr = b.get("PlayAddr") or {}
+        height = play_addr.get("Height") or 576
+        fps = b.get("BitrateFPS") or 30
+        res_str = f"{height}p{fps}"
+        
+        bitrate_bps = b.get("Bitrate") or 0
+        bitrate_mbps = round(bitrate_bps / 1000000, 1)
+        
+        data_size = int(play_addr.get("DataSize") or 0)
+        size_mb = round(data_size / (1024 * 1024), 1) if data_size > 0 else 0.0
+        
+        url_list = play_addr.get("UrlList") or []
+        
+        links = []
+        if codec == "h264":
+            if url_list:
+                links.append(f'🌐📱<a href="{url_list[0]}">play_addr</a>')
+            elif play_url:
+                links.append(f'🌐📱<a href="{play_url}">play_addr</a>')
+            if len(url_list) > 1:
+                links.append(f'🌐<a href="{url_list[1]}">{gear_name}</a>')
+            elif url_list:
+                links.append(f'🌐<a href="{url_list[0]}">{gear_name}</a>')
+            if len(url_list) > 2:
+                links.append(f'📱<a href="{url_list[2]}">play_addr_h264</a>')
+            elif hd_url:
+                links.append(f'📱<a href="{hd_url}">play_addr_h264</a>')
+            elif play_url:
+                links.append(f'📱<a href="{play_url}">play_addr_h264</a>')
+        else:
+            if url_list:
+                links.append(f'🌐📱<a href="{url_list[0]}">{gear_name}</a>')
+            if len(url_list) > 1:
+                links.append(f'📱<a href="{url_list[1]}">play_addr_bytevc1</a>')
+            elif play_url:
+                links.append(f'📱<a href="{play_url}">play_addr_bytevc1</a>')
+        
+        header_line = " ".join(links) if links else f"🌐📱 {gear_name}"
+        detail_line = f"{res_str} • {bitrate_mbps} MBps • {codec} • {size_mb} MB"
+        blocks.append(f"{header_line}\n{detail_line}")
+    return blocks
+
+def extract_tiktok_advanced_sync(url: str) -> Dict[str, Any]:
+    """Trích xuất metadata chuyên sâu từ TikTok SSR qua yt-dlp hook."""
+    custom_meta = {}
+    orig_parse = yt_dlp.extractor.tiktok.TikTokIE._parse_aweme_video_web
+
+    def capturing_parse(self, aweme_detail, webpage_url, video_id, extract_flat=False):
+        v = aweme_detail.get('video') or {}
+        custom_meta['tiktok_vq_score'] = v.get('VQScore')
+        custom_meta['video_width'] = v.get('width')
+        custom_meta['video_height'] = v.get('height')
+        custom_meta['video_ratio'] = v.get('ratio')
+        custom_meta['bitrate_info'] = v.get('bitrateInfo') or []
+        custom_meta['diversification_labels'] = aweme_detail.get('diversificationLabels') or []
+        
+        is_aigc = bool(aweme_detail.get('IsAigc') or (str(aweme_detail.get('aigcLabelType')) == '1') or aweme_detail.get('ShowAIGC'))
+        custom_meta['is_aigc'] = is_aigc
+
+        # Source detection từ anchors logExtra
+        anchors = aweme_detail.get('anchors') or []
+        video_source = None
+        for a in anchors:
+            log_extra = a.get('logExtra') or ''
+            if 'video_source' in log_extra:
+                try:
+                    le = json.loads(log_extra)
+                    video_source = le.get('video_source')
+                except Exception:
+                    pass
+        custom_meta['video_source'] = video_source
+        custom_meta['anchors'] = anchors
+
+        return orig_parse(self, aweme_detail, webpage_url, video_id, extract_flat)
+
+    try:
+        yt_dlp.extractor.tiktok.TikTokIE._parse_aweme_video_web = capturing_parse
+        ydl_opts = {
+            'quiet': True,
+            'skip_download': True,
+            'no_warnings': True,
+        }
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            ydl.extract_info(url, download=False)
+    except Exception:
+        pass
+    finally:
+        yt_dlp.extractor.tiktok.TikTokIE._parse_aweme_video_web = orig_parse
+
+    return custom_meta
+
+def infer_upload_source(data: Dict[str, Any], meta: Dict[str, Any], video_source_code: Optional[int] = None) -> str:
+    """Xác định nguồn xuất bản video (Upload Source)."""
+    # 1. Từ mã video_source nội bộ của TikTok
+    if video_source_code == 1:
+        return "Phone (Gallery)"
+    elif video_source_code == 0:
+        return "Phone (Camera)"
+
     title = (data.get("title") or "").lower()
     anchors = data.get("anchors") or []
     has_capcut_anchor = any("capcut" in str(a).lower() for a in anchors) if isinstance(anchors, list) else False
     
-    if "capcut" in title or has_capcut_anchor:
-        return "🎬 CapCut Creative Suite"
     if data.get("is_ad"):
-        return "📢 TikTok Ads Manager / Business Studio"
+        return "TikTok Ads"
     
-    # Kiểm tra nếu đăng từ Web Browser / Desktop (wm_size == 0)
+    # Đăng từ Web Browser / Desktop (wm_size == 0)
     if data.get("wm_size") == 0:
-        return "🌐 Web Browser / Desktop Studio"
+        return "Web Browser"
     
-    return "📱 TikTok Mobile App"
+    if "capcut" in title or has_capcut_anchor:
+        return "CapCut"
+    
+    # Phân tích tỷ lệ khung hình màn hình điện thoại
+    w = meta.get("width") or 1080
+    h = meta.get("height") or 1920
+    if w > 0 and h > 0:
+        ratio = w / h if w > h else h / w
+        if ratio >= 2.0 or (w > h and abs(w/h - 4/3) < 0.05):
+            return "Phone (Gallery)"
+
+    return "Phone (Gallery)"
 
 def parse_mp4_full_metadata(chunk: bytes, file_size: int = 0) -> Dict[str, Any]:
     """Trích xuất toàn bộ metadata chi tiết từ MP4 header."""
@@ -241,16 +393,14 @@ async def probe_video_full_metadata(video_url: str, file_size: int = 0) -> Optio
         pass
     return None
 
-async def fetch_tiktok_video(tiktok_url: str) -> Tuple[bool, Optional[Dict[str, Any]], Optional[str]]:
-    """Gọi API TikWM để lấy thông tin chi tiết và tính toán đầy đủ các thông số Checker."""
-    resolved_url = await resolve_tiktok_shortlink(tiktok_url)
-
+async def _fetch_tikwm_api(url: str, original_url: str) -> Tuple[bool, Optional[Dict[str, Any]], Optional[str]]:
+    """Hàm phụ trách gọi API TikWM."""
     api_url = "https://www.tikwm.com/api/"
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/122.0.0.0 Safari/537.36",
         "Accept": "application/json"
     }
-    payload = {"url": resolved_url, "hd": 1}
+    payload = {"url": url, "hd": 1}
 
     try:
         async with aiohttp.ClientSession() as session:
@@ -260,8 +410,8 @@ async def fetch_tiktok_video(tiktok_url: str) -> Tuple[bool, Optional[Dict[str, 
 
                 result = await resp.json()
                 if result.get("code") != 0 or not result.get("data"):
-                    if resolved_url != tiktok_url:
-                        payload["url"] = tiktok_url
+                    if url != original_url:
+                        payload["url"] = original_url
                         async with session.post(api_url, data=payload, headers=headers) as retry_resp:
                             if retry_resp.status == 200:
                                 retry_res = await retry_resp.json()
@@ -272,66 +422,120 @@ async def fetch_tiktok_video(tiktok_url: str) -> Tuple[bool, Optional[Dict[str, 
                     msg = result.get("msg", "Không thể tìm thấy video. Link có thể ở chế độ riêng tư hoặc đã bị xóa.")
                     return False, None, msg
 
-                data = result["data"]
-
-                hd_url = data.get("hdplay") or data.get("play")
-                hd_size = data.get("hd_size") or data.get("size") or 0
-                meta = await probe_video_full_metadata(hd_url, hd_size)
-
-                duration_val = (meta.get("duration_sec") if meta else 0) or data.get("duration", 0)
-
-                std_size = data.get("size") or hd_size
-                browser_size_mb = round(std_size / (1024 * 1024), 2)
-                app_size_mb = round(hd_size / (1024 * 1024), 2)
-
-                app_bitrate = meta.get("bitrate_mbps", 0.0) if meta else 0.0
-                if app_bitrate == 0.0 and duration_val > 0 and hd_size > 0:
-                    app_bitrate = round((hd_size * 8) / (duration_val * 1000 * 1000), 2)
-
-                browser_bitrate = round((std_size * 8) / (duration_val * 1000 * 1000), 2) if (duration_val > 0 and std_size > 0) else app_bitrate
-                fps_source = meta.get("fps", 30.0) if meta else 30.0
-                browser_fps = min(fps_source, 60.0)
-                app_fps = fps_source
-
-                width = meta.get("width", 1080) if meta else 1080
-                height = meta.get("height", 1920) if meta else 1920
-
-                # Tính VQScore
-                vq_score, vq_label = calculate_vqscore(app_bitrate, width, height, app_fps)
-
-                # Trích xuất từ khóa tìm kiếm & Hashtags
-                title_str = data.get("title") or ""
-                keywords = re.findall(r'#(\w+)', title_str)
-                category = infer_video_category(title_str, keywords)
-                upload_source = infer_upload_source(data, meta or {})
-
-                data["_meta"] = {
-                    "format": meta.get("format", "MP4 (MPEG-4 Part 14)") if meta else "MP4 (MPEG-4 Part 14)",
-                    "codec": meta.get("codec", "H.264 (AVC)") if meta else "H.264 (AVC)",
-                    "width": width,
-                    "height": height,
-                    "duration_sec": duration_val,
-                    "browser_fps": browser_fps,
-                    "app_fps": app_fps,
-                    "browser_bitrate_mbps": browser_bitrate,
-                    "app_bitrate_mbps": app_bitrate,
-                    "browser_size_mb": browser_size_mb,
-                    "app_size_mb": app_size_mb,
-                    "vq_score": vq_score,
-                    "vq_label": vq_label,
-                    "category": category,
-                    "keywords": keywords,
-                    "upload_source": upload_source,
-                }
-                data["_width"] = width
-                data["_height"] = height
-
-                return True, data, None
-
+                return True, result["data"], None
     except asyncio.TimeoutError:
         return False, None, "Quá thời gian kết nối đến máy chủ TikTok. Vui lòng thử lại sau giây lát."
     except Exception as e:
         return False, None, f"Đã xảy ra lỗi khi xử lý link: {str(e)}"
+
+async def fetch_tiktok_video(tiktok_url: str) -> Tuple[bool, Optional[Dict[str, Any]], Optional[str]]:
+    """Gọi API TikWM kết hợp đồng thời trích xuất metadata TikTok SSR để tính toán đầy đủ thông số Checker."""
+    resolved_url = await resolve_tiktok_shortlink(tiktok_url)
+
+    # Chạy song song TikWM và yt-dlp SSR hook để tối ưu tốc độ
+    tikwm_task = asyncio.create_task(_fetch_tikwm_api(resolved_url, tiktok_url))
+    adv_task = asyncio.create_task(asyncio.to_thread(extract_tiktok_advanced_sync, resolved_url))
+
+    done, pending = await asyncio.wait([tikwm_task, adv_task], timeout=6.0)
+    for p in pending:
+        p.cancel()
+
+    tikwm_res = tikwm_task.result() if (tikwm_task in done and not tikwm_task.exception()) else (False, None, "Quá thời gian kết nối API.")
+    if not tikwm_res[0] or not tikwm_res[1]:
+        return False, None, tikwm_res[2]
+
+    data = tikwm_res[1]
+    adv_meta = adv_task.result() if (adv_task in done and not adv_task.exception()) else {}
+
+    hd_url = data.get("hdplay") or data.get("play")
+    play_url = data.get("play") or hd_url
+    hd_size = data.get("hd_size") or data.get("size") or 0
+    meta = await probe_video_full_metadata(hd_url, hd_size)
+
+    duration_val = (meta.get("duration_sec") if meta else 0) or data.get("duration", 0)
+
+    std_size = data.get("size") or hd_size
+    browser_size_mb = round(std_size / (1024 * 1024), 2)
+    app_size_mb = round(hd_size / (1024 * 1024), 2)
+
+    app_bitrate = meta.get("bitrate_mbps", 0.0) if meta else 0.0
+    if app_bitrate == 0.0 and duration_val > 0 and hd_size > 0:
+        app_bitrate = round((hd_size * 8) / (duration_val * 1000 * 1000), 2)
+
+    browser_bitrate = round((std_size * 8) / (duration_val * 1000 * 1000), 2) if (duration_val > 0 and std_size > 0) else app_bitrate
+    fps_source = meta.get("fps", 30.0) if meta else 30.0
+    browser_fps = min(fps_source, 60.0)
+    app_fps = fps_source
+
+    width = adv_meta.get("video_width") or (meta.get("width", 1080) if meta else 1080)
+    height = adv_meta.get("video_height") or (meta.get("height", 1920) if meta else 1920)
+
+    # Tính điểm VQScore từ thuật toán
+    bot_vq_score, vq_label = calculate_vqscore(app_bitrate, width, height, app_fps)
+
+    # Trích xuất VQScore từ TikTok AI (nếu có, ví dụ 74.82)
+    tiktok_vq_score = adv_meta.get("tiktok_vq_score")
+
+    # Tính độ phân giải Original Master
+    orig_res = calculate_original_resolution(width, height)
+
+    # Khối link stream chi tiết (H.264 & HEVC)
+    bitrate_info = adv_meta.get("bitrate_info") or []
+    stream_blocks = format_stream_blocks(bitrate_info, play_url, hd_url)
+
+    # Nguồn xuất bản
+    video_source_code = adv_meta.get("video_source")
+    upload_source = infer_upload_source(data, {"width": width, "height": height}, video_source_code)
+
+    # Phân loại danh mục
+    title_str = data.get("title") or ""
+    keywords = re.findall(r'#(\w+)', title_str)
+    diversification_labels = adv_meta.get("diversification_labels") or []
+    if diversification_labels:
+        category = " / ".join(diversification_labels)
+    else:
+        category = infer_video_category(title_str, keywords)
+
+    # AI Generated flag
+    is_aigc = bool(adv_meta.get("is_aigc") or data.get("ai_dynamic_cover") or data.get("is_ai_created"))
+
+    # FPS hiển thị cho Browser và Phone stream
+    stream_fps = (bitrate_info[0].get("BitrateFPS") if bitrate_info else None) or int(round(app_fps))
+    browser_fps_display = min(stream_fps, 60)
+    phone_fps_display = stream_fps
+
+    browser_res = f"{height}p{browser_fps_display}"
+    phone_res = f"{height}p{phone_fps_display}"
+
+    data["_meta"] = {
+        "format": meta.get("format", "MP4 (MPEG-4 Part 14)") if meta else "MP4 (MPEG-4 Part 14)",
+        "codec": meta.get("codec", "H.264 (AVC)") if meta else "H.264 (AVC)",
+        "width": width,
+        "height": height,
+        "orig_res": orig_res,
+        "browser_res": browser_res,
+        "phone_res": phone_res,
+        "duration_sec": duration_val,
+        "browser_fps": browser_fps,
+        "app_fps": app_fps,
+        "browser_bitrate_mbps": browser_bitrate,
+        "app_bitrate_mbps": app_bitrate,
+        "browser_size_mb": browser_size_mb,
+        "app_size_mb": app_size_mb,
+        "bot_vq_score": bot_vq_score,
+        "vq_score": bot_vq_score,
+        "tiktok_vq_score": tiktok_vq_score,
+        "vq_label": vq_label,
+        "stream_blocks": stream_blocks,
+        "category": category,
+        "keywords": keywords,
+        "upload_source": upload_source,
+        "is_aigc": is_aigc,
+    }
+    data["_width"] = width
+    data["_height"] = height
+
+    return True, data, None
 
 # ==============================================================
 # Instagram Downloader Integration

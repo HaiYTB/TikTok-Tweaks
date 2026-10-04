@@ -2,41 +2,41 @@ import datetime
 from typing import Dict, Any, Optional, Tuple, List
 
 COUNTRY_MAP: Dict[str, Tuple[str, str]] = {
-    "VN": ("🇻🇳", "Việt Nam"),
-    "US": ("🇺🇸", "Hoa Kỳ (United States)"),
-    "GB": ("🇬🇧", "Vương Quốc Anh (United Kingdom)"),
-    "FR": ("🇫🇷", "Pháp (France)"),
-    "DE": ("🇩🇪", "Đức (Germany)"),
-    "JP": ("🇯🇵", "Nhật Bản (Japan)"),
-    "KR": ("🇰🇷", "Hàn Quốc (South Korea)"),
-    "CN": ("🇨🇳", "Trung Quốc (China)"),
-    "TW": ("🇹🇼", "Đài Loan (Taiwan)"),
-    "TH": ("🇹🇭", "Thái Lan (Thailand)"),
+    "VN": ("🇻🇳", "Vietnam"),
+    "US": ("🇺🇸", "United States"),
+    "GB": ("🇬🇧", "United Kingdom"),
+    "FR": ("🇫🇷", "France"),
+    "DE": ("🇩🇪", "Germany"),
+    "JP": ("🇯🇵", "Japan"),
+    "KR": ("🇰🇷", "South Korea"),
+    "CN": ("🇨🇳", "China"),
+    "TW": ("🇹🇼", "Taiwan"),
+    "TH": ("🇹🇭", "Thailand"),
     "ID": ("🇮🇩", "Indonesia"),
     "PH": ("🇵🇭", "Philippines"),
     "MY": ("🇲🇾", "Malaysia"),
     "SG": ("🇸🇬", "Singapore"),
-    "IN": ("🇮🇳", "Ấn Độ (India)"),
-    "RU": ("🇷🇺", "Nga (Russia)"),
+    "IN": ("🇮🇳", "India"),
+    "RU": ("🇷🇺", "Russia"),
     "BR": ("🇧🇷", "Brazil"),
     "CA": ("🇨🇦", "Canada"),
-    "AU": ("🇦🇺", "Úc (Australia)"),
-    "IT": ("🇮🇹", "Ý (Italy)"),
-    "ES": ("🇪🇸", "Tây Ban Nha (Spain)"),
+    "AU": ("🇦🇺", "Australia"),
+    "IT": ("🇮🇹", "Italy"),
+    "ES": ("🇪🇸", "Spain"),
     "MX": ("🇲🇽", "Mexico"),
-    "TR": ("🇹🇷", "Thổ Nhĩ Kỳ (Turkey)"),
-    "SA": ("🇸🇦", "Ả Rập Xê Út (Saudi Arabia)"),
+    "TR": ("🇹🇷", "Turkey"),
+    "SA": ("🇸🇦", "Saudi Arabia"),
     "AE": ("🇦🇪", "UAE"),
 }
 
 def get_country_display(country_code: Optional[str]) -> str:
     """Chuyển đổi mã quốc gia thành cờ và tên quốc gia."""
     if not country_code:
-        return "🌐 Không xác định (Unknown)"
+        return "🌐 Unknown"
     code = country_code.strip().upper()
     if code in COUNTRY_MAP:
         flag, name = COUNTRY_MAP[code]
-        return f"{flag} {name} ({code})"
+        return f"{flag} {name}"
     try:
         flag = "".join(chr(127397 + ord(c)) for c in code if 'A' <= c <= 'Z')
         return f"{flag} {code}" if flag else code
@@ -147,11 +147,13 @@ def resolve_stream_resolutions(width: int, height: int, fps: float) -> Tuple[str
 
 def build_video_stats_message(data: Dict[str, Any]) -> str:
     """
-    Tạo thông điệp thống kê video hoàn chỉnh với thiết kế mới (Fresh design & Premium Emojis)
-    và đầy đủ TẤT CẢ các mục Checker theo yêu cầu.
+    Tạo thông điệp thống kê video hoàn chỉnh theo phong cách thanh lịch, cô đọng:
+    - ℹ️ Information: ID, Source, Region, Shadow ban
+    - 📊 Statistics: View, Like, Comment, Share, Save, ER%
+    - ⭐️ Quality: Browser, Phone, chi tiết từng luồng stream (H.264, HEVC), Original, và VQ Score (TikTok AI & Thuật toán)
+    - 📝 Details: AI Generated, Category, Audio
     """
     cover_url = data.get("origin_cover") or data.get("cover")
-    # Đặt preview video chất lượng tốt nhất ở ngay đầu tin nhắn
     preview_tag = f'<a href="{cover_url}">&#8205;</a>' if cover_url else ''
 
     video_id = str(data.get("id") or "N/A")
@@ -162,36 +164,32 @@ def build_video_stats_message(data: Dict[str, Any]) -> str:
     unique_id = author.get("unique_id", "user")
     
     meta = data.get("_meta") or {}
-    fmt = meta.get("format", "MP4 (MPEG-4 Part 14)")
-    codec = meta.get("codec", "H.264 (AVC)")
-    width = meta.get("width", 1080)
-    height = meta.get("height", 1920)
-    duration_str = format_duration_detailed(meta.get("duration_sec") or data.get("duration", 0))
+    upload_source = meta.get("upload_source", "Phone (Gallery)")
+    upload_country = get_country_display(data.get("region"))
+    
+    # Shadowban status
+    is_nff_or_nr = data.get("is_nff_or_nr", False)
+    comment_settings = data.get("item_comment_settings", 0)
+    if is_nff_or_nr:
+        shadowban_display = "Yes ⚠️"
+    elif comment_settings != 0:
+        shadowban_display = "Restricted 🟡"
+    else:
+        shadowban_display = "No ✅"
 
-    # Thông số Browser vs Mobile App
-    browser_fps = meta.get("browser_fps", 60.0)
-    app_fps = meta.get("app_fps", 120.0)
-    browser_bitrate = meta.get("browser_bitrate_mbps", 0.0)
-    app_bitrate = meta.get("app_bitrate_mbps", 0.0)
-    browser_size = meta.get("browser_size_mb", 0.0)
-    app_size = meta.get("app_size_mb", 0.0)
-
-    # VQScore, Category, Keywords, Upload Source
-    vq_score = meta.get("vq_score", 95.0)
-    vq_label = meta.get("vq_label", "⚡ Rất Cao (High Bitrate)")
-    category = meta.get("category", "🎬 General Entertainment")
-    keywords = meta.get("keywords") or []
-    keywords_str = " ".join([f"#{k}" for k in keywords[:8]]) if keywords else "Không có hashtag cụ thể"
-    upload_source = meta.get("upload_source", "📱 TikTok Mobile App")
-
-    # Số liệu tương tác & tính toán Engagement Rate
+    # Statistics & Engagement
     views_val = int(data.get("play_count", 0) or 0)
     likes_val = int(data.get("digg_count", 0) or 0)
     comments_val = int(data.get("comment_count", 0) or 0)
     shares_val = int(data.get("share_count", 0) or 0)
     collects_val = int(data.get("collect_count", 0) or 0)
+    
+    views_exact = format_exact_number(views_val)
+    likes_exact = format_exact_number(likes_val)
+    comments_exact = format_exact_number(comments_val)
+    shares_exact = format_exact_number(shares_val)
+    collects_exact = format_exact_number(collects_val)
 
-    # Công thức ER: (likes + comments + shares + saves) / views * 100
     total_eng = likes_val + comments_val + shares_val + collects_val
     er = (total_eng / views_val * 100) if views_val > 0 else 0.0
     save_rate = (collects_val / views_val * 100) if views_val > 0 else 0.0
@@ -206,21 +204,32 @@ def build_video_stats_message(data: Dict[str, Any]) -> str:
     else:
         er_badge = "📉 Thấp"
 
-    views_exact = format_exact_number(views_val)
-    likes_exact = format_exact_number(likes_val)
-    comments_exact = format_exact_number(comments_val)
-    shares_exact = format_exact_number(shares_val)
-    collects_exact = format_exact_number(collects_val)
+    # Quality & Resolutions
+    browser_res = meta.get("browser_res") or "576p30"
+    phone_res = meta.get("phone_res") or "576p30"
+    orig_res = meta.get("orig_res") or "1080×1920"
 
-    downloads_val = int(data.get("download_count", 0) or 0)
-    downloads_exact = format_exact_number(downloads_val)
+    stream_blocks = meta.get("stream_blocks") or []
+    if stream_blocks:
+        stream_content = "\n\n".join(stream_blocks) + "\n"
+    else:
+        codec = meta.get("codec", "H.264 (AVC)")
+        app_size = meta.get("app_size_mb", 0.0)
+        app_bitrate = meta.get("app_bitrate_mbps", 0.0)
+        stream_content = f"🌐📱 play_addr\n{phone_res} • {app_bitrate:.1f} MBps • {codec} • {app_size:.1f} MB\n"
 
-    created_date = format_creation_date_gmt0(data.get("create_time"))
-    shadowban_status, _ = analyze_shadowban_status(data)
-    upload_country = get_country_display(data.get("region"))
+    # Dual VQScore display
+    tiktok_vq = meta.get("tiktok_vq_score")
+    bot_vq = meta.get("bot_vq_score") or meta.get("vq_score", 77.7)
+    if tiktok_vq is not None:
+        vq_str = f"<b>{tiktok_vq}</b> (TikTok AI) • <b>{bot_vq}/100</b> (Thuật toán)"
+    else:
+        vq_str = f"<b>{bot_vq}/100</b> (Thuật toán)"
 
-    # Link âm thanh trực tiếp
-    music_url = data.get("music") or ""
+    # Details
+    ai_gen = "Yes" if meta.get("is_aigc") else "No"
+    category = meta.get("category", "🎬 General Entertainment")
+    
     music_info = data.get("music_info") or {}
     music_title = (music_info.get("title") or "").strip()
     music_author = (music_info.get("author") or "").strip()
@@ -229,34 +238,30 @@ def build_video_stats_message(data: Dict[str, Any]) -> str:
     elif music_title:
         music_display = music_title
     else:
-        music_display = "Âm thanh gốc (Original Audio)"
-
-    audio_direct_link = f"<a href='{music_url}'>Bấm vào đây để nghe/tải nhạc</a>" if music_url else "Âm thanh gắn liền video"
-
-    orig_res, app_res, web_res = resolve_stream_resolutions(width, height, app_fps)
+        music_display = "Original Sound"
 
     message = (
         f"{preview_tag}"
-        f"👑 <b>TIKTOK-TWEAKS CHECKER</b>\n"
-        f"━━━━━━━━━━━━━━━━━━━━\n"
         f"🎬 <b>{title}</b>\n"
-        f"👤 {nickname} (<code>@{unique_id}</code>) • ⏱️ <code>{duration_str}</code>\n"
-        f"🆔 <code>{video_id}</code> • 📍 {upload_country} • 📅 <code>{created_date}</code>\n\n"
-        f"📊 <b>TƯƠNG TÁC (STATISTICS):</b>\n"
-        f"• 👁️ <code>{views_exact}</code>  ❤️ <code>{likes_exact}</code>  💬 <code>{comments_exact}</code>  🔄 <code>{shares_exact}</code>  ⭐ <code>{collects_exact}</code>\n"
-        f"• Tương tác: <b>ER: {er:.2f}%</b> ({er_badge}) • Lưu: <code>{save_rate:.1f}%</code> • Share: <code>{share_rate:.1f}%</code>\n"
-        f"• Trạng thái: {shadowban_status}\n\n"
-        f"⭐️ <b>ĐỘ PHÂN GIẢI & STREAM (QUALITY):</b>\n"
-        f"• 💎 Original (Gốc): <code>{orig_res}</code>\n"
-        f"• 📱 Phone (App): <code>{app_res}</code> ({codec} • <code>{app_size:.1f} MB</code>)\n"
-        f"• 🌐 Browser (Web): <code>{web_res}</code> (H.264 • <code>{browser_size:.1f} MB</code>)\n"
-        f"• ⚡ Stream Specs: <code>{app_fps:.1f} FPS</code> • <code>{app_bitrate:.2f} Mbps</code> • VQ: <b>{vq_score}/100</b>\n\n"
-        f"🏷️ <b>PHÂN LOẠI & THÔNG TIN:</b>\n"
-        f"• Nguồn đăng: <b>{upload_source}</b>\n"
-        f"• Danh mục: <b>{category}</b>\n"
-        f"• Từ khóa: <i>{keywords_str}</i>\n"
-        f"• Âm thanh: 🎵 <i>{music_display}</i>\n\n"
-        f"<i>💡 Bấm các nút bên dưới để tải video không logo hoặc tải nhạc MP3:</i>"
+        f"👤 {nickname} (<code>@{unique_id}</code>)\n\n"
+        f"ℹ️ <b>Information</b>\n"
+        f"• 🗂 ID | <code>{video_id}</code>\n"
+        f"• ⬇️ Source | {upload_source}\n"
+        f"• 📍 Region | {upload_country}\n"
+        f"• 👻 Shadow ban | {shadowban_display}\n\n"
+        f"📊 <b>Statistics</b>\n"
+        f"• 👁️ <code>{views_exact}</code> • ❤️ <code>{likes_exact}</code> • 💬 <code>{comments_exact}</code> • 🔄 <code>{shares_exact}</code> • ⭐ <code>{collects_exact}</code>\n"
+        f"• ER: <b>{er:.2f}%</b> ({er_badge}) • Lưu: <code>{save_rate:.1f}%</code> • Share: <code>{share_rate:.1f}%</code>\n\n"
+        f"⭐️ <b>Quality</b>\n"
+        f"• 🌐 Browser | <code>{browser_res}</code>\n"
+        f"• 📱 Phone | <code>{phone_res}</code>\n"
+        f"{stream_content}"
+        f"┃ Original | <code>{orig_res}</code>\n"
+        f"┃ VQ Score | {vq_str}\n\n"
+        f"📝 <b>Details</b>\n"
+        f"┃ AI Generated | {ai_gen}\n"
+        f"┃ Category | {category}\n"
+        f"┃ Audio | 🎵 <i>{music_display}</i>"
     )
     return message
 
